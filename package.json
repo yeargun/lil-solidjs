@@ -1,0 +1,88 @@
+{
+  "name": "solidlil",
+  "version": "0.1.0",
+  "description": "Solid 2.0's client runtime, ported to LilScript and published as a dependency-free package.",
+  "keywords": [
+    "solid",
+    "solidjs",
+    "reactive",
+    "signals",
+    "lilscript"
+  ],
+  "homepage": "https://yeargun.github.io/solidlil/",
+  "bugs": "https://github.com/yeargun/solidlil/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yeargun/solidlil.git"
+  },
+  "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
+  "author": "yeargun",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./types/index.d.ts",
+  "unpkg": "./dist/solidlil.global.js",
+  "jsdelivr": "./dist/solidlil.global.js",
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.js"
+    },
+    "./web": {
+      "types": "./types/web.d.ts",
+      "import": "./dist/web.js",
+      "require": "./dist/web.cjs",
+      "default": "./dist/web.js"
+    },
+    "./full": {
+      "types": "./types/full.d.ts",
+      "import": "./dist/full.js",
+      "require": "./dist/full.cjs",
+      "default": "./dist/full.js"
+    },
+    "./global": "./dist/solidlil.global.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/*.js",
+    "dist/*.cjs",
+    "types",
+    "LICENSE",
+    "NOTICE.md",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "build:apps": "node scripts/build-apps.mjs",
+    "build:site": "node scripts/build-site.mjs",
+    "build:all": "npm run build && npm run build:apps && npm run bench:perf && npm run build:site",
+    "bench:perf": "node scripts/measure-perf.mjs",
+    "check": "npm run test && npm run check:types && npm run check:site && npm run check:pack",
+    "check:site": "npm run build:site && node --test test/site.test.mjs",
+    "check:types": "tsc -p test/types/tsconfig.json",
+    "check:pack": "node scripts/check-pack.mjs",
+    "test": "node --test test/node.test.mjs test/vite.test.mjs",
+    "test:size": "node scripts/measure-size.mjs",
+    "prepublishOnly": "npm run check"
+  },
+  "devDependencies": {
+    "@solidjs/signals": "2.0.0-rc.0",
+    "@solidjs/vite-plugin": "3.0.0-next.29",
+    "@solidjs/web": "2.0.0-rc.0",
+    "esbuild": "0.25.9",
+    "playwright": "1.55.0",
+    "solid-js": "2.0.0-rc.0",
+    "terser": "5.43.1",
+    "typescript": "5.9.2",
+    "vite": "6.4.3"
+  }
+}

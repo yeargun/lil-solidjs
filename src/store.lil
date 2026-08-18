@@ -1,0 +1,48 @@
+import { Signal, createIntSignal, signalGet } from "./reactive";
+
+export class Store<T> {
+  T value;
+  Signal<int> version;
+
+  init(T value) {
+    this.value = value;
+    this.version = createIntSignal(0);
+  }
+
+  T read() {
+    this.version.read();
+    return this.value;
+  }
+
+  void mutate(func(T)->void updater) {
+    updater(this.value);
+    Signal<int> version = this.version;
+    version.write(version.peek() + 1);
+  }
+
+  void replace(T next) {
+    this.value = next;
+    Signal<int> version = this.version;
+    version.write(version.peek() + 1);
+  }
+}
+
+export Store<T> createStore<T>(T initial) {
+  return new Store(initial);
+}
+
+export T storeGet<T>(Store<T> store) {
+  return store.read();
+}
+
+export void storeSet<T>(Store<T> store, func(T)->void updater) {
+  store.mutate(updater);
+}
+
+export void storeReplace<T>(Store<T> store, T next) {
+  store.replace(next);
+}
+
+export int storeVersion<T>(Store<T> store) {
+  return signalGet(store.version);
+}

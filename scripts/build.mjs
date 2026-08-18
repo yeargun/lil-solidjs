@@ -1,0 +1,147 @@
+import { spawn, spawnSync } from "node:child_process"
+import { existsSync } from "node:fs"
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises"
+import { dirname, join, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
+import { build } from "esbuild"
+import { minify } from "terser"
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+const source = join(root, "src")
+const dist = join(root, "dist")
+const compilerCandidates = [
+  process.env.SOLIDLIL_LILSCRIPT_BIN,
+  resolve(root, "../lilscript/target/release/lilscript"),
+  "lilscript",
+].filter(Boolean)
+const compiler = compilerCandidates.find((candidate) => {
+  if (candidate.includes("/") && !existsSync(candidate)) return false
+  return spawnSync(candidate, ["--version"], { stdio: "ignore" }).status === 0
+})
+const buildMode = process.env.SOLIDLIL_BUILD_MODE ?? "production"
+if (!compiler) {
+  throw new Error("LilScript compiler not found. Set SOLIDLIL_LILSCRIPT_BIN to a release compiler.")
+}
+
+await rm(dist, { recursive: true, force: true })
+await mkdir(dist, { recursive: true })
+
+const temps = []
+
+function compile(name, input) {
+  const compiled = join(source, `.__compiled-${name}.mjs`)
+  temps.push(compiled)
+  return new Promise((resolvePromise, reject) => {
+    const child = spawn(
+      compiler,
+      [join(source, input), "--target", "js-module", "--config", join(source, "lilscript.toml"), "--mode", buildMode, "--output", compiled],
+      { cwd: root },
+    )
+    let output = ""
+    child.stdout.on("data", (chunk) => { output += chunk })
+    child.stderr.on("data", (chunk) => { output += chunk })
+    child.on("error", reject)
+    child.on("close", (status) => {
+      if (status !== 0) reject(new Error(output || `${name} failed`))
+      else resolvePromise(compiled)
+    })
+  })
+}
+
+async function terserMinify(file, module) {
+  if (buildMode !== "production") return
+  const result = await minify(await readFile(file, "utf8"), {
+    module,
+    compress: { passes: 3 },
+    mangle: { toplevel: true, properties: { regex: /^_/, keep_quoted: true } },
+    format: { comments: false },
+  })
+  if (!result.code) throw new Error(`Terser produced no code for ${file}`)
+  await writeFile(file, `${result.code}\n`)
+}
+
+async function emitBundled(entry, outfile, format, platform = "browser") {
+  await build({
+    entryPoints: [entry],
+    bundle: true,
+    platform,
+    format,
+    target: "es2020",
+    treeShaking: true,
+    legalComments: "none",
+    logLevel: "warning",
+    outfile,
+    ...(format === "iife" ? { globalName: "solidlil" } : {}),
+  })
+  await terserMinify(outfile, format === "esm")
+}
+
+try {
+  const core = await compile("core", "entries/core.lil")
+  const web = await compile("web", "web.lil")
+  const full = await compile("full", "entries/full.lil")
+  await emitBundled(core, join(dist, "core.js"), "esm")
+  await emitBundled(core, join(dist, "core.cjs"), "cjs", "neutral")
+  await emitBundled(web, join(dist, "web.js"), "esm")
+  await emitBundled(web, join(dist, "web.cjs"), "cjs", "neutral")
+  await emitBundled(full, join(dist, "full.js"), "esm")
+  await emitBundled(full, join(dist, "full.cjs"), "cjs", "neutral")
+  await emitBundled(full, join(dist, "solidlil.global.js"), "iife")
+
+  const compatSource = (await readFile(join(source, "compat.mjs"), "utf8")).replaceAll(
+    "./.__compiled-core.mjs",
+    "./core.js",
+  )
+  await writeFile(join(dist, "compat.js"), compatSource)
+  await writeFile(
+    join(dist, "index.js"),
+    [
+      'export {',
+      '  createBoolMemo,',
+      '  createBoolSignal,',
+      '  createContext,',
+      '  createIntMemo,',
+      '  createIntSignal,',
+      '  createJsSignal,',
+      '  createRenderBind,',
+      '  createRenderEffect,',
+      '  createRoot,',
+      '  createStringMemo,',
+      '  createStringSignal,',
+      '  createUserEffect,',
+      '  diagnosticEffectSlots,',
+      '  diagnosticFreeEffectSlots,',
+      '  diagnosticFreeOwnerSlots,',
+      '  diagnosticOwnerSlots,',
+      '  diagnosticPendingEffects,',
+      '  enablePendingThrows,',
+      '  flush,',
+      '  isPending,',
+      '  latest,',
+      '  onCleanup,',
+      '  onSettled,',
+      '  provideContext,',
+      '  signalGet,',
+      '  signalMarkPending,',
+      '  signalPeek,',
+      '  signalPending,',
+      '  signalSet,',
+      '  signalUpdate,',
+      '  untrack,',
+      '  useContext,',
+      '  storeGet,',
+      '  storeReplace,',
+      '  storeSet,',
+      '  storeVersion,',
+      '} from "./core.js"',
+      'export { createSignal, createMemo, createEffect, createStore } from "./compat.js"',
+      "",
+    ].join("\n"),
+  )
+  await emitBundled(join(dist, "index.js"), join(dist, "index.cjs"), "cjs", "neutral")
+  await emitBundled(join(dist, "index.js"), join(dist, "index.bundle.js"), "esm")
+} finally {
+  await Promise.all(temps.map((file) => rm(file, { force: true })))
+}
+
+console.log(`Built solidlil ${buildMode} entries with ${compiler}`)

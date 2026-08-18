@@ -1,0 +1,118 @@
+import { Signal, append, createBoolSignal, createIntSignal, createSignal, createStringSignal, render } from "solidlil";
+
+class Todo {
+  int id;
+  Signal<string> title;
+  Signal<bool> done;
+
+  init(int id, string title) {
+    this.id = id;
+    this.title = createStringSignal(title);
+    this.done = createBoolSignal(false);
+  }
+}
+
+class NodeRef {
+  Element? node;
+
+  init() {
+    this.node = null;
+  }
+}
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<int> nextId = createIntSignal(1);
+  Signal<Todo[]> todos = createSignal([], (Todo[] a, Todo[] b) => false);
+  Signal<string> draft = createStringSignal("");
+  Signal<int> filter = createIntSignal(0);
+  Signal<Todo[]> visible = createMemo([], () => {
+    Todo[] allTodos = todos.read();
+    int mode = filter.read();
+    if (mode == 0) {
+      return allTodos;
+    }
+    Todo[] filtered = [];
+    for (int index = 0; index < allTodos.length; index++) {
+      Todo todo = allTodos[index];
+      bool isDone = todo.done.read();
+      if (mode == 1 && !isDone) {
+        filtered.push(todo);
+      } else if (mode == 2 && isDone) {
+        filtered.push(todo);
+      }
+    }
+    return filtered;
+  }, (Todo[] a, Todo[] b) => false);
+  NodeRef field = new NodeRef();
+
+  Element view = (
+    <div class="stack">
+      <h2>Todos</h2>
+      <div class="row">
+        <input
+          placeholder="What needs doing?"
+          ref={(Element node) => { field.node = node; }}
+          value={draft.read()}
+          onInput={() => {
+            Element? node = field.node;
+            if (node != null) {
+              draft.write(node.value);
+            }
+          }}
+        />
+        <button class="primary" onClick={() => {
+          string title = draft.read();
+          if (title.length == 0) {
+            return;
+          }
+          int id = nextId.read();
+          nextId.write(id + 1);
+          Todo[] current = todos.read().slice();
+          current.push(new Todo(id, title));
+          todos.write(current);
+          draft.write("");
+        }}>Add</button>
+      </div>
+      <div class="row">
+        <button onClick={() => { filter.write(0); }}>All</button>
+        <button onClick={() => { filter.write(1); }}>Active</button>
+        <button onClick={() => { filter.write(2); }}>Done</button>
+      </div>
+      <For each={visible}>
+        {(Todo todo) => (
+          <div class="todo-item">
+            <input
+              type="checkbox"
+              checked={todo.done.read()}
+              onChange={() => { todo.done.write(!todo.done.read()); }}
+            />
+            <span>{todo.title.read()}</span>
+            <button onClick={() => {
+              Todo[] current = todos.read();
+              Todo[] next = [];
+              for (int index = 0; index < current.length; index++) {
+                if (current[index].id != todo.id) {
+                  next.push(current[index]);
+                }
+              }
+              todos.write(next);
+            }}>Remove</button>
+          </div>
+        )}
+      </For>
+      <p class="muted">{remainingLabel(todos)}</p>
+    </div>
+  );
+  append(root, view);
+});
+
+string remainingLabel(Signal<Todo[]> todos) {
+  Todo[] allTodos = todos.read();
+  int remaining = 0;
+  for (int index = 0; index < allTodos.length; index++) {
+    if (!allTodos[index].done.read()) {
+      remaining += 1;
+    }
+  }
+  return `${remaining} left`;
+}

@@ -1,0 +1,29 @@
+import { Signal, append, createIntSignal, onCleanup, onSettled, render } from "solidlil";
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<int> seconds = createIntSignal(0);
+  onSettled(() => {
+    int id = every(() => {
+      seconds.write((seconds.read() + 1) % 60);
+    }, 1000);
+    onCleanup(() => stopEvery(id));
+  });
+  Element view = (
+    <div class="stack">
+      <h2>SVG clock</h2>
+      <svg class="clock" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="48" fill="#fff" stroke="#10233a" />
+        <line
+          x1="50"
+          y1="50"
+          x2="50"
+          y2="12"
+          stroke="#2c4f7c"
+          stroke-width="3"
+          transform={`rotate(${seconds.read() * 6} 50 50)`}
+        />
+      </svg>
+    </div>
+  );
+  append(root, view);
+});

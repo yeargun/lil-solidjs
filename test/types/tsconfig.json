@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2020", "DOM"],
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": false,
+    "baseUrl": ".",
+    "paths": {
+      "solidlil": ["../../types/index.d.ts"],
+      "solidlil/web": ["../../types/web.d.ts"],
+      "solidlil/full": ["../../types/full.d.ts"]
+    }
+  },
+  "include": ["consumer.ts"]
+}

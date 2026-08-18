@@ -1,0 +1,118 @@
+import { Signal, append, createIntSignal, createSignal, createStringSignal, render } from "solidlil";
+
+string[] adjectives = [
+  "pretty", "large", "big", "small", "tall", "short", "long",
+  "handsome", "plain", "quaint", "clean", "elegant", "easy", "angry",
+  "crazy", "helpful", "mushy", "odd", "unsightly", "adorable",
+  "important", "inexpensive", "cheap", "expensive", "fancy"
+];
+string[] colors = [
+  "red", "yellow", "blue", "green", "pink", "brown", "purple",
+  "white", "black", "orange"
+];
+string[] nouns = [
+  "table", "chair", "house", "bbq", "desk", "car", "pony", "cookie",
+  "sandwich", "burger", "pizza", "mouse", "keyboard"
+];
+
+class Row {
+  int id;
+  Signal<string> label;
+
+  init(int id, string label) {
+    this.id = id;
+    this.label = createStringSignal(label);
+  }
+}
+
+int pick(string[] values) {
+  return (Math.random() * values.length).round().toInt() % values.length;
+}
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<int> nextId = createIntSignal(1);
+  Signal<Row[]> rows = createSignal([], (Row[] a, Row[] b) => false);
+  Signal<int> selected = createIntSignal(0);
+
+  func(int)->Row[] build = (int count) => {
+    Row[] result = [];
+    int id = nextId.read();
+    for (int index = 0; index < count; index++) {
+      string label = adjectives[pick(adjectives)] + " " + colors[pick(colors)] + " " + nouns[pick(nouns)];
+      result.push(new Row(id, label));
+      id += 1;
+    }
+    nextId.write(id);
+    return result;
+  };
+
+  Element view = (
+    <div class="stack">
+      <h2>Keyed rows</h2>
+      <div class="row">
+        <button onClick={() => { rows.write(build(1000)); }}>Create 1,000</button>
+        <button onClick={() => { rows.write(build(10000)); }}>Create 10,000</button>
+        <button onClick={() => {
+          Row[] current = rows.read().slice();
+          Row[] extra = build(1000);
+          for (int index = 0; index < extra.length; index++) {
+            current.push(extra[index]);
+          }
+          rows.write(current);
+        }}>Append 1,000</button>
+        <button onClick={() => {
+          Row[] current = rows.read();
+          for (int index = 0; index < current.length; index += 10) {
+            Row row = current[index];
+            row.label.write(row.label.read() + " !!!");
+          }
+        }}>Update every 10th</button>
+        <button onClick={() => {
+          selected.write(0);
+          rows.write([]);
+        }}>Clear</button>
+        <button onClick={() => {
+          Row[] current = rows.read();
+          if (current.length <= 998) {
+            return;
+          }
+          Row[] next = current.slice();
+          Row second = next[1];
+          next[1] = next[998];
+          next[998] = second;
+          rows.write(next);
+        }}>Swap rows</button>
+      </div>
+      <table>
+        <tbody>
+          <For each={rows} keyed={(Row row) => row.id}>
+            {(Row row) => (
+              <tr class={{ danger: selected.read() == row.id }}>
+                <td>{row.id}</td>
+                <td>
+                  <a onClick={() => { selected.write(row.id); }}>{row.label.read()}</a>
+                </td>
+                <td>
+                  <a onClick={() => {
+                    if (selected.read() == row.id) {
+                      selected.write(0);
+                    }
+                    Row[] current = rows.read();
+                    Row[] next = [];
+                    for (int cursor = 0; cursor < current.length; cursor++) {
+                      if (current[cursor].id != row.id) {
+                        next.push(current[cursor]);
+                      }
+                    }
+                    rows.write(next);
+                  }}>remove</a>
+                </td>
+              </tr>
+            )}
+          </For>
+        </tbody>
+      </table>
+    </div>
+  );
+  append(root, view);
+});

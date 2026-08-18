@@ -1,0 +1,53 @@
+import {
+  Context,
+  Signal,
+  append,
+  createContext,
+  createStringSignal,
+  provideContext,
+  render,
+  useContext
+} from "solidlil";
+
+class ThemeBox {
+  Signal<string> value;
+
+  init(Signal<string> value) {
+    this.value = value;
+  }
+}
+
+Context<ThemeBox> ThemeContext = createContext(new ThemeBox(createStringSignal("light")));
+
+Element ThemeChild(JsValue props) {
+  return <p>{`Child sees ${useContext(ThemeContext).value.read()}`}</p>;
+}
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<string> theme = createStringSignal("light");
+  ThemeBox box = new ThemeBox(theme);
+  Element view = (
+    <div class="stack">
+      <h2>Context</h2>
+      <button onClick={() => {
+        if (theme.read() == "light") {
+          theme.write("dark");
+        } else {
+          theme.write("light");
+        }
+      }}>
+        {`Theme ${theme.read()}`}
+      </button>
+    </div>
+  );
+  provideContext(ThemeContext, box, () => {
+    Element card = (
+      <div class="card">
+        <ThemeChild />
+      </div>
+    );
+    append(view, card);
+    return 0;
+  });
+  append(root, view);
+});

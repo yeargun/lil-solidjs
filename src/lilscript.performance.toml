@@ -1,0 +1,21 @@
+[optimization]
+preset = "maximum"
+
+[javascript]
+priority = "performance-first"
+optimization_level = 15
+cost_model = "brotli"
+function_spelling = "function"
+integer_coercions = true
+local_name_reserve = 48
+public_aggregate_abi = "positional"
+pool_numeric_literals = true
+
+[mangle]
+identifiers = true
+properties = true
+exports = true
+pool_strings = true
+
+[bundle]
+mode = "single"

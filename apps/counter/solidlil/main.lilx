@@ -1,0 +1,11 @@
+import { Signal, append, createIntSignal, render } from "solidlil";
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<int> count = createIntSignal(0);
+  Element view = (
+    <button type="button" class="count-btn" onClick={() => { count.write(count.read() + 1); }}>
+      {`Count ${count.read()}`}
+    </button>
+  );
+  append(root, view);
+});

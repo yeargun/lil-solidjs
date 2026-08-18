@@ -1,0 +1,29 @@
+import { Signal, append, createIntSignal, createStringSignal, isPending, render, signalMarkPending } from "solidlil";
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<int> userId = createIntSignal(1);
+  Signal<string> profile = createStringSignal("Ada Lovelace #1");
+  signalMarkPending(profile, false);
+  Element view = (
+    <div class="stack">
+      <h2>Async memo</h2>
+      <button class="primary" onClick={() => {
+        int id = userId.read() + 1;
+        userId.write(id);
+        signalMarkPending(profile, true);
+        delay(() => {
+          profile.write(`Ada Lovelace #${id}`);
+          signalMarkPending(profile, false);
+        }, 180);
+      }}>
+        Next profile
+      </button>
+      <div class="card">
+        <Loading fallback={<p class="muted">Loading profile…</p>}>
+          <h3>{profile.read()}</h3>
+        </Loading>
+      </div>
+    </div>
+  );
+  append(root, view);
+});

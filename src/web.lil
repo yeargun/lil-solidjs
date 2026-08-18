@@ -1,0 +1,632 @@
+import {
+  Context,
+  Signal,
+  createBoolSignal,
+  createContext,
+  createIntSignal,
+  createRenderBind,
+  createRenderEffect,
+  createRoot,
+  createSignal,
+  createStringSignal,
+  enablePendingThrows,
+  flush,
+  onCleanup,
+  provideContext,
+  untrack
+} from "./reactive";
+import {
+  Document,
+  Element,
+  Math,
+  Window,
+  document,
+  window
+} from "./host";
+
+export Element prepareTemplate(string html) {
+  Element template = document.createElement("template");
+  template.innerHTML = html;
+  Element fragment = template.content;
+  Element? node = fragment.firstChild;
+  if (node == null) {
+    return document.createElement("div");
+  }
+  return node;
+}
+
+export Element cloneTemplate(Element node) {
+  return node.cloneNode(true);
+}
+
+export Element element(string tag) {
+  return document.createElement(tag);
+}
+
+export Element svgElement(string tag) {
+  return document.createElementNS("http://www.w3.org/2000/svg", tag);
+}
+
+export Element text(string value) {
+  return document.createTextNode(value);
+}
+
+export Element comment() {
+  return document.createComment("");
+}
+
+export Element firstChild(Element node) {
+  Element? child = node.firstChild;
+  if (child == null) {
+    throw "lsx: missing firstChild";
+  }
+  return child;
+}
+
+export Element nextSibling(Element node) {
+  Element? sibling = node.nextSibling;
+  if (sibling == null) {
+    throw "lsx: missing nextSibling";
+  }
+  return sibling;
+}
+
+export void append(Element parent, Element child) {
+  parent.appendChild(child);
+}
+
+export void removeNode(Element node) {
+  Element? parent = node.parentNode;
+  if (parent != null) {
+    parent.removeChild(node);
+  }
+}
+
+export void insertBefore(Element parent, Element child, Element? before) {
+  parent.insertBefore(child, before);
+}
+
+export void clear(Element parent) {
+  Element? child = parent.firstChild;
+  while (child != null) {
+    Element current = child;
+    child = current.nextSibling;
+    parent.removeChild(current);
+  }
+}
+
+export void setText(Element node, string value) {
+  if (node.textContent != value) {
+    node.textContent = value;
+  }
+}
+
+export void bindText(Element node, func()->string compute) {
+  createRenderBind(compute, (string value) => setText(node, value));
+}
+
+export void bindAttribute(Element node, string name, func()->string compute) {
+  createRenderBind(compute, (string value) => node.setAttribute(name, value));
+}
+
+export void bindClass(Element node, string name, func()->bool compute) {
+  createRenderBind(compute, (bool value) => node.classList.toggle(name, value));
+}
+
+export void bindHidden(Element node, func()->bool compute) {
+  createRenderBind(compute, (bool value) => {
+    node.hidden = value;
+  });
+}
+
+export void bindValue(Element node, func()->string compute) {
+  createRenderBind(compute, (string value) => {
+    if (node.value != value) {
+      node.value = value;
+    }
+  });
+}
+
+export void bindChecked(Element node, func()->bool compute) {
+  createRenderBind(compute, (bool value) => {
+    node.checked = value;
+  });
+}
+
+export void bindStyle(Element node, string name, func()->string compute) {
+  createRenderBind(compute, (string value) => node.style.setProperty(name, value));
+}
+
+export void onClick(Element node, func()->void handler) {
+  func()->void wrapped = () => {
+    handler();
+    flush();
+  };
+  node.addEventListener("click", wrapped);
+  onCleanup(() => node.removeEventListener("click", wrapped));
+}
+
+export void onInput(Element node, func()->void handler) {
+  func()->void wrapped = () => {
+    handler();
+    flush();
+  };
+  node.addEventListener("input", wrapped);
+  onCleanup(() => node.removeEventListener("input", wrapped));
+}
+
+export void onChange(Element node, func()->void handler) {
+  node.addEventListener("change", handler);
+  onCleanup(() => node.removeEventListener("change", handler));
+}
+
+export func()->void render(string selector, func(Element)->void app) {
+  Element? root = document.querySelector(selector);
+  if (root == null) {
+    throw "solidlil: render root not found";
+  }
+  Element mount = root;
+  return createRoot((func()->void dispose) => {
+    onCleanup(() => clear(mount));
+    app(mount);
+    return dispose;
+  });
+}
+
+export func()->void renderNode(Element mount, func(Element)->void app) {
+  return createRoot((func()->void dispose) => {
+    onCleanup(() => clear(mount));
+    app(mount);
+    return dispose;
+  });
+}
+
+class Disposer {
+  func()->void run;
+
+  init(func()->void run) {
+    this.run = run;
+  }
+
+  void dispose() {
+    func()->void run = this.run;
+    run();
+  }
+}
+
+export void show(
+  Element parent,
+  func()->bool when,
+  func()->Element children,
+  func()->Element fallback
+) {
+  Element marker = comment();
+  parent.appendChild(marker);
+  Element? current = null;
+  Disposer? currentDispose = null;
+  createRenderEffect(() => {
+    bool visible = when();
+    Disposer? previousDispose = currentDispose;
+    if (previousDispose != null) {
+      previousDispose.dispose();
+    }
+    currentDispose = new Disposer(createRoot((func()->void dispose) => {
+      Element next = comment();
+      if (visible) {
+        next = children();
+      } else {
+        next = fallback();
+      }
+      Element? after = marker.nextSibling;
+      parent.insertBefore(next, after);
+      current = next;
+      return dispose;
+    }));
+  });
+  onCleanup(() => {
+    Disposer? dispose = currentDispose;
+    if (dispose != null) {
+      dispose.dispose();
+    }
+    if (current != null) {
+      removeNode(current);
+    }
+    removeNode(marker);
+  });
+}
+
+export void switchIndex(
+  Element parent,
+  func()->int selected,
+  (func()->Element)[] branches,
+  func()->Element fallback
+) {
+  Element marker = comment();
+  parent.appendChild(marker);
+  Element? current = null;
+  createRenderEffect(() => {
+    int index = selected();
+    Element next = untrack(() => {
+      if (index >= 0 && index < branches.length) {
+        func()->Element branch = branches[index];
+        return branch();
+      }
+      return fallback();
+    });
+    if (current != null) {
+      removeNode(current);
+    }
+    Element? after = marker.nextSibling;
+    parent.insertBefore(next, after);
+    current = next;
+  });
+  onCleanup(() => {
+    if (current != null) {
+      removeNode(current);
+    }
+    removeNode(marker);
+  });
+}
+
+class KeyedRow<T> {
+  T item;
+  int key;
+  Element node;
+  Signal<int> index;
+  func()->void dispose;
+
+  init(T item, int key, Element node, Signal<int> index, func()->void dispose) {
+    this.item = item;
+    this.key = key;
+    this.node = node;
+    this.index = index;
+    this.dispose = dispose;
+  }
+}
+
+class KeyedTable<T> {
+  KeyedRow<T>[] rows;
+  bool[] present;
+  KeyedRow<T>[] order;
+
+  init() {
+    this.rows = [];
+    this.present = [];
+    this.order = [];
+  }
+
+  void grow(int key, KeyedRow<T> filler) {
+    while (this.present.length <= key) {
+      this.present.push(false);
+      this.rows.push(filler);
+    }
+  }
+
+  void put(int key, KeyedRow<T> row) {
+    this.grow(key, row);
+    this.rows[key] = row;
+    this.present[key] = true;
+    this.order.push(row);
+  }
+
+  KeyedRow<T>? take(int key) {
+    if (key < 0 || key >= this.present.length) {
+      return null;
+    }
+    if (!this.present[key]) {
+      return null;
+    }
+    this.present[key] = false;
+    return this.rows[key];
+  }
+
+  void disposeRemaining() {
+    for (int index = 0; index < this.order.length; index++) {
+      KeyedRow<T> leftover = this.order[index];
+      if (leftover.key >= 0 && leftover.key < this.present.length && this.present[leftover.key]) {
+        leftover.dispose();
+        removeNode(leftover.node);
+        this.present[leftover.key] = false;
+      }
+    }
+  }
+
+  void disposeAll() {
+    for (int index = 0; index < this.order.length; index++) {
+      KeyedRow<T> leftover = this.order[index];
+      leftover.dispose();
+      removeNode(leftover.node);
+    }
+  }
+}
+
+class TableRef<T> {
+  KeyedTable<T> current;
+
+  init() {
+    this.current = new KeyedTable();
+  }
+}
+
+export void keyedEach<T>(
+  Element parent,
+  func()->T[] items,
+  func(T)->int keyOf,
+  func(T, Signal<int>)->Element createRow
+) {
+  Element marker = comment();
+  parent.appendChild(marker);
+  TableRef<T> holder = new TableRef();
+  func(T[])->void reconcile = (T[] nextItems) => {
+    KeyedTable<T> previous = holder.current;
+    KeyedTable<T> nextTable = new KeyedTable();
+    for (int index = 0; index < nextItems.length; index++) {
+      T item = nextItems[index];
+      int key = keyOf(item);
+      KeyedRow<T>? matched = previous.take(key);
+      if (matched != null) {
+        matched.item = item;
+        matched.index.write(index);
+        nextTable.put(key, matched);
+      } else {
+        createRoot((func()->void innerDispose) => {
+          Signal<int> indexSignal = createIntSignal(index);
+          Element node = createRow(item, indexSignal);
+          nextTable.put(key, new KeyedRow(item, key, node, indexSignal, innerDispose));
+          return innerDispose;
+        });
+      }
+    }
+    previous.disposeRemaining();
+    Element? cursor = marker.nextSibling;
+    for (int index = 0; index < nextTable.order.length; index++) {
+      KeyedRow<T> row = nextTable.order[index];
+      if (row.node != cursor) {
+        parent.insertBefore(row.node, cursor);
+      }
+      cursor = row.node.nextSibling;
+    }
+    holder.current = nextTable;
+  };
+  createRenderEffect(() => {
+    T[] nextItems = items();
+    untrack(() => reconcile(nextItems));
+  });
+  onCleanup(() => {
+    holder.current.disposeAll();
+    removeNode(marker);
+  });
+}
+
+export void indexEach<T>(
+  Element parent,
+  func()->T[] items,
+  func(Signal<T>, int)->Element createRow
+) {
+  Element marker = comment();
+  parent.appendChild(marker);
+  Signal<T>[] itemSignals = [];
+  Element[] nodes = [];
+  (func()->void)[] disposers = [];
+
+  createRenderEffect(() => {
+    T[] nextItems = items();
+    while (itemSignals.length > nextItems.length) {
+      int last = itemSignals.length - 1;
+      itemSignals.pop();
+      func()->void dispose = disposers[last];
+      disposers.pop();
+      Element node = nodes[last];
+      nodes.pop();
+      dispose();
+      removeNode(node);
+    }
+    for (int index = 0; index < nextItems.length; index++) {
+      T item = nextItems[index];
+      if (index < itemSignals.length) {
+        itemSignals[index].write(item);
+      } else {
+        Signal<T> itemSignal = createSignal(item, (T previous, T next) => previous == next);
+        createRoot((func()->void innerDispose) => {
+          Element node = createRow(itemSignal, index);
+          nodes.push(node);
+          parent.insertBefore(node, null);
+          disposers.push(innerDispose);
+          return innerDispose;
+        });
+        itemSignals.push(itemSignal);
+      }
+    }
+  });
+  onCleanup(() => {
+    while (disposers.length > 0) {
+      int last = disposers.length - 1;
+      func()->void dispose = disposers[last];
+      disposers.pop();
+      Element node = nodes[last];
+      nodes.pop();
+      itemSignals.pop();
+      dispose();
+      removeNode(node);
+    }
+    removeNode(marker);
+  });
+}
+
+export void repeat(
+  Element parent,
+  func()->int count,
+  func(int)->Element createRow
+) {
+  Element marker = comment();
+  parent.appendChild(marker);
+  Element[] nodes = [];
+  (func()->void)[] disposers = [];
+  createRenderEffect(() => {
+    int nextCount = count();
+    if (nextCount < 0) {
+      nextCount = 0;
+    }
+    while (nodes.length > nextCount) {
+      int last = nodes.length - 1;
+      func()->void dispose = disposers[last];
+      disposers.pop();
+      Element node = nodes[last];
+      nodes.pop();
+      dispose();
+      removeNode(node);
+    }
+    while (nodes.length < nextCount) {
+      int index = nodes.length;
+      createRoot((func()->void innerDispose) => {
+        Element node = createRow(index);
+        nodes.push(node);
+        parent.insertBefore(node, null);
+        disposers.push(innerDispose);
+        return innerDispose;
+      });
+    }
+  });
+  onCleanup(() => {
+    while (disposers.length > 0) {
+      int last = disposers.length - 1;
+      func()->void dispose = disposers[last];
+      disposers.pop();
+      Element node = nodes[last];
+      nodes.pop();
+      dispose();
+      removeNode(node);
+    }
+    removeNode(marker);
+  });
+}
+
+export void portal(Element target, func()->Element children) {
+  Element node = children();
+  target.appendChild(node);
+  onCleanup(() => removeNode(node));
+}
+
+export void loading(
+  Element parent,
+  func()->void ready,
+  func()->Element fallback
+) {
+  Element marker = comment();
+  parent.appendChild(marker);
+  Element? current = null;
+  createRenderEffect(() => {
+    enablePendingThrows(true);
+    try {
+      if (current != null) {
+        removeNode(current);
+        current = null;
+      }
+      ready();
+    } catch (auto error) {
+      Element next = untrack(fallback);
+      if (current != null) {
+        removeNode(current);
+      }
+      Element? after = marker.nextSibling;
+      parent.insertBefore(next, after);
+      current = next;
+    } finally {
+      enablePendingThrows(false);
+    }
+  });
+  onCleanup(() => {
+    if (current != null) {
+      removeNode(current);
+    }
+    removeNode(marker);
+  });
+}
+
+Context<func(string)->void> errorContext = createContext((string message) => {
+  throw message;
+});
+
+export void errored(
+  Element parent,
+  func()->void children,
+  func(string, func()->void)->Element fallback
+) {
+  Element marker = comment();
+  parent.appendChild(marker);
+  Element? current = null;
+  Signal<string> message = createStringSignal("");
+  Signal<bool> failed = createBoolSignal(false);
+
+  func()->void reset = () => {
+    message.write("");
+    failed.write(false);
+  };
+
+  createRenderEffect(() => {
+    if (failed.read()) {
+      string text = message.read();
+      Element next = untrack(() => fallback(text, reset));
+      if (current != null) {
+        removeNode(current);
+      }
+      Element? after = marker.nextSibling;
+      parent.insertBefore(next, after);
+      current = next;
+      return;
+    }
+    provideContext(errorContext, (string error) => {
+      message.write(error);
+      failed.write(true);
+    }, () => {
+      try {
+        children();
+      } catch (auto error) {
+        if (error is string) {
+          message.write(error);
+        } else {
+          message.write("error");
+        }
+        failed.write(true);
+      }
+      return 0;
+    });
+  });
+  onCleanup(() => {
+    if (current != null) {
+      removeNode(current);
+    }
+    removeNode(marker);
+  });
+}
+
+export int randomIndex(int maximum) {
+  if (maximum <= 0) {
+    return 0;
+  }
+  return (Math.random() * maximum).round().toInt() % maximum;
+}
+
+export int delay(func()->void callback, int ms) {
+  return window.setTimeout(callback, ms);
+}
+
+export void clearDelay(int id) {
+  window.clearTimeout(id);
+}
+
+export int every(func()->void callback, int ms) {
+  return window.setInterval(callback, ms);
+}
+
+export void stopEvery(int id) {
+  window.clearInterval(id);
+}
+
+export Document hostDocument() {
+  return document;
+}
+
+export Window hostWindow() {
+  return window;
+}

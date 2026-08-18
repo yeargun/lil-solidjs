@@ -1,0 +1,666 @@
+import {
+  Object,
+  Signal,
+  createBoolSignal,
+  createIntSignal,
+  createRenderEffect,
+  createRoot,
+  enablePendingThrows,
+  flush,
+  onCleanup,
+  untrack
+} from "./reactive";
+import {
+  Element,
+  Math,
+  document
+} from "./host";
+import {
+  append,
+  cloneTemplate,
+  comment,
+  element,
+  firstChild,
+  indexEach,
+  insertBefore,
+  keyedEach,
+  delay,
+  every,
+  hostDocument,
+  nextSibling,
+  prepareTemplate,
+  removeNode,
+  render,
+  repeat,
+  setText,
+  stopEvery,
+  svgElement,
+  text
+} from "./web";
+
+export {
+  Element,
+  Math,
+  append,
+  cloneTemplate,
+  createRenderEffect,
+  delay,
+  element,
+  every,
+  firstChild,
+  hostDocument,
+  nextSibling,
+  prepareTemplate,
+  render,
+  setText,
+  stopEvery,
+  svgElement,
+  text
+};
+
+export Element query(string selector) {
+  Element? node = document.querySelector(selector);
+  if (node == null) {
+    throw "lsx: query root not found";
+  }
+  return node;
+}
+
+export Element fragment() {
+  return document.createDocumentFragment();
+}
+
+export Element mathElement(string tag) {
+  return document.createElementNS("http://www.w3.org/1998/Math/MathML", tag);
+}
+
+export Element prepareSvgTemplate(string html) {
+  Element svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.innerHTML = html;
+  Element? node = svg.firstChild;
+  if (node == null) {
+    return svg;
+  }
+  return node;
+}
+
+export Element prepareMathTemplate(string html) {
+  Element math = document.createElementNS("http://www.w3.org/1998/Math/MathML", "math");
+  math.innerHTML = html;
+  Element? node = math.firstChild;
+  if (node == null) {
+    return math;
+  }
+  return node;
+}
+
+export void attribute(Element node, string name, string value) {
+  node.setAttribute(name, value);
+}
+
+export void namespacedAttribute(Element node, string namespace, string name, string value) {
+  node.setAttribute(name, value);
+}
+
+export void boolAttribute(Element node, string name, bool value) {
+  if (value) {
+    node.setAttribute(name, "");
+  } else {
+    node.removeAttribute(name);
+  }
+}
+
+export void stringProperty(Element node, string name, string value) {
+  if (name == "value") {
+    if (node.value != value) {
+      node.value = value;
+    }
+    return;
+  }
+  if (name == "textContent") {
+    setText(node, value);
+    return;
+  }
+  node.setAttribute(name, value);
+}
+
+export void boolProperty(Element node, string name, bool value) {
+  if (name == "checked") {
+    node.checked = value;
+    return;
+  }
+  if (name == "disabled") {
+    node.disabled = value;
+    return;
+  }
+  if (name == "hidden") {
+    node.hidden = value;
+    return;
+  }
+  boolAttribute(node, name, value);
+}
+
+export void classToggle(Element node, string name, bool value) {
+  node.classList.toggle(name, value);
+}
+
+export void dynamicText(Element parent, func()->string value) {
+  Element content = text("");
+  append(parent, content);
+  createRenderEffect(() => setText(content, value()));
+}
+
+export void dynamicTextNode(Element content, func()->string value) {
+  createRenderEffect(() => setText(content, value()));
+}
+
+export Element reactiveText(func()->string value) {
+  Element content = text("");
+  createRenderEffect(() => setText(content, value()));
+  return content;
+}
+
+export Element[] childNodes(Element parent) {
+  Element[] nodes = [];
+  Element? child = parent.firstChild;
+  while (child != null) {
+    Element current = child;
+    nodes.push(current);
+    child = current.nextSibling;
+  }
+  return nodes;
+}
+
+export Element[] nodeGroup(Element node) {
+  if (node.nodeType == 11) {
+    return childNodes(node);
+  }
+  return [node];
+}
+
+export Element[] flattenNodeGroups(Element[][] groups) {
+  Element[] nodes = [];
+  for (int group = 0; group < groups.length; group++) {
+    Element[] items = groups[group];
+    for (int index = 0; index < items.length; index++) {
+      nodes.push(items[index]);
+    }
+  }
+  return nodes;
+}
+
+export Element materializeNodeGroup(Element[] nodes) {
+  if (nodes.length == 1) {
+    return nodes[0];
+  }
+  Element root = fragment();
+  for (int index = 0; index < nodes.length; index++) {
+    append(root, nodes[index]);
+  }
+  return root;
+}
+
+export JsValue componentProps() {
+  return JS.object();
+}
+
+export void componentProperty<T>(JsValue props, string name, func()->T getter) {
+  Object.defineProperty(
+    props,
+    name,
+    record{
+      configurable: true,
+      enumerable: true,
+      get: getter
+    }
+  );
+}
+
+export void componentSpread(JsValue props, JsValue source) {
+  string[] keys = Object.keys(source);
+  for (int index = 0; index < keys.length; index++) {
+    string name = keys[index];
+    componentProperty(props, name, () => JS.get(source, name));
+  }
+}
+
+export T componentProp<T>(JsValue props, string name) {
+  return JS.assume(JS.get(props, name));
+}
+
+export Element componentNode(func(JsValue)->Element component, JsValue props) {
+  return untrack(() => component(props));
+}
+
+export Element[] componentNodes(func(JsValue)->Element component, JsValue props) {
+  return nodeGroup(componentNode(component, props));
+}
+
+export void appendComponentChildren(Element parent, JsValue props) {
+  Element[] nodes = componentProp(props, "children");
+  for (int index = 0; index < nodes.length; index++) {
+    append(parent, nodes[index]);
+  }
+}
+
+export void spreadProps(Element node, JsValue props, bool svg) {
+  string[] keys = Object.keys(props);
+  for (int index = 0; index < keys.length; index++) {
+    string name = keys[index];
+    if (name == "children") {
+      continue;
+    }
+    attribute(node, name, "" + JS.get(props, name));
+  }
+}
+
+export void use<T>(Element node, func(Element, T)->void directive, T value) {
+  directive(node, value);
+}
+
+export class Region {
+  Element parent;
+  Element marker;
+  Element[] current;
+  bool disposed;
+
+  init(Element parent) {
+    this.parent = parent;
+    this.marker = comment();
+    this.current = [];
+    this.disposed = false;
+    append(parent, this.marker);
+  }
+
+  void replace(Element[] next) {
+    while (this.current.length > 0) {
+      Element node = this.current[this.current.length - 1];
+      this.current.pop();
+      removeNode(node);
+    }
+    for (int index = 0; index < next.length; index++) {
+      insertBefore(this.parent, next[index], this.marker);
+      this.current.push(next[index]);
+    }
+  }
+
+  void dispose() {
+    if (this.disposed) {
+      return;
+    }
+    this.replace([]);
+    removeNode(this.marker);
+    this.disposed = true;
+  }
+}
+
+export Region region(Element parent) {
+  Region target = new Region(parent);
+  onCleanup(() => target.dispose());
+  return target;
+}
+
+class NodeBox {
+  Element[] value;
+
+  init() {
+    this.value = [];
+  }
+}
+
+class Branch {
+  func()->void dispose;
+
+  init() {
+    this.dispose = () => {};
+  }
+
+  Element[] render(func()->Element[] children) {
+    func()->void previous = this.dispose;
+    previous();
+    NodeBox box = new NodeBox();
+    this.dispose = createRoot((func()->void inner) => {
+      box.value = children();
+      return inner;
+    });
+    return box.value;
+  }
+
+  void clear() {
+    func()->void previous = this.dispose;
+    previous();
+    this.dispose = () => {};
+  }
+}
+
+export void dynamicShow(
+  Region target,
+  func()->bool when,
+  func()->Element[] children,
+  func()->Element[] fallback
+) {
+  Branch branch = new Branch();
+  onCleanup(() => branch.clear());
+  createRenderEffect(() => {
+    if (when()) {
+      target.replace(branch.render(children));
+    } else {
+      target.replace(branch.render(fallback));
+    }
+  });
+}
+
+export void dynamicSwitch(
+  Region target,
+  (func()->bool)[] conditions,
+  (func()->Element[])[] branches,
+  func()->Element[] fallback
+) {
+  Branch branch = new Branch();
+  int active = -2;
+  onCleanup(() => branch.clear());
+  createRenderEffect(() => {
+    int selected = -1;
+    for (int index = 0; index < conditions.length; index++) {
+      func()->bool condition = conditions[index];
+      if (condition()) {
+        selected = index;
+        break;
+      }
+    }
+    if (selected == active) {
+      return;
+    }
+    active = selected;
+    if (selected >= 0) {
+      func()->Element[] next = branches[selected];
+      target.replace(branch.render(next));
+    } else {
+      target.replace(branch.render(fallback));
+    }
+  });
+}
+
+export void dynamicForValue<T>(
+  Element parent,
+  Signal<T[]> each,
+  func(T)->Element children
+) {
+  identityEach(parent, () => each.read(), (T item, Signal<int> index) => children(item));
+}
+
+export void dynamicKeyedValue<T>(
+  Element parent,
+  Signal<T[]> each,
+  func(T)->int keyOf,
+  func(T)->Element children
+) {
+  keyedEach(parent, () => each.read(), keyOf, (T item, Signal<int> index) => children(item));
+}
+
+export void dynamicKeyedNodes<T>(
+  Element parent,
+  Signal<T[]> each,
+  func(T)->int keyOf,
+  func(T, Signal<int>)->Element[] children
+) {
+  keyedEach(parent, () => each.read(), keyOf, (T item, Signal<int> index) => {
+    return materializeNodeGroup(children(item, index));
+  });
+}
+
+export void dynamicForNodes<T>(
+  Element parent,
+  Signal<T[]> each,
+  func(T, Signal<int>)->Element[] children,
+  func()->Element[] fallback
+) {
+  identityEach(parent, () => each.read(), (T item, Signal<int> index) => {
+    return materializeNodeGroup(children(item, index));
+  });
+}
+
+export void dynamicForValueNodes<T>(
+  Element parent,
+  Signal<T[]> each,
+  func(T)->Element[] children,
+  func()->Element[] fallback
+) {
+  identityEach(parent, () => each.read(), (T item, Signal<int> index) => {
+    return materializeNodeGroup(children(item));
+  });
+}
+
+export void dynamicIndexNodes<T>(
+  Element parent,
+  Signal<T[]> each,
+  func(Signal<T>, int)->Element[] children,
+  func()->Element[] fallback
+) {
+  indexEach(parent, () => each.read(), (Signal<T> item, int index) => {
+    return materializeNodeGroup(children(item, index));
+  });
+}
+
+export void dynamicRepeat(
+  Element parent,
+  func()->int count,
+  func(int)->Element children
+) {
+  repeat(parent, count, children);
+}
+
+export void dynamicRepeatNodes(
+  Element parent,
+  func()->int count,
+  func(int)->Element[] children
+) {
+  repeat(parent, count, (int index) => materializeNodeGroup(children(index)));
+}
+
+export void dynamicLoading(
+  Region target,
+  func()->Element[] children,
+  func()->Element[] fallback
+) {
+  Branch branch = new Branch();
+  onCleanup(() => branch.clear());
+  createRenderEffect(() => {
+    enablePendingThrows(true);
+    try {
+      Element[] nodes = children();
+      target.replace(branch.render(() => nodes));
+    } catch (auto error) {
+      target.replace(branch.render(fallback));
+    } finally {
+      enablePendingThrows(false);
+    }
+  });
+}
+
+export void dynamicErrored(
+  Region target,
+  func()->Element[] children,
+  func(JsValue, func()->void)->Element[] fallback
+) {
+  Branch branch = new Branch();
+  Signal<bool> failed = createBoolSignal(false);
+  JsValue fault = JS.undefined();
+  func()->void reset = () => {
+    failed.write(false);
+    fault = JS.undefined();
+  };
+  onCleanup(() => branch.clear());
+  createRenderEffect(() => {
+    if (failed.read()) {
+      JsValue current = fault;
+      target.replace(branch.render(() => fallback(current, reset)));
+      return;
+    }
+    try {
+      Element[] nodes = children();
+      target.replace(branch.render(() => nodes));
+    } catch (auto error) {
+      fault = JS.assume(error);
+      failed.write(true);
+    }
+  });
+}
+
+export Element portalNodes(
+  Element parent,
+  Element mount,
+  bool svg,
+  bool useShadow,
+  func(Element)->void attach,
+  func()->Element[] children
+) {
+  Element[] nodes = children();
+  Element container = fragment();
+  for (int index = 0; index < nodes.length; index++) {
+    append(container, nodes[index]);
+  }
+  attach(container);
+  mount.appendChild(container);
+  onCleanup(() => {
+    for (int index = 0; index < nodes.length; index++) {
+      removeNode(nodes[index]);
+    }
+  });
+  return container;
+}
+
+export void onEvent(Element node, string event, func()->void callback) {
+  func()->void wrapped = () => {
+    callback();
+    flush();
+  };
+  node.addEventListener(event, wrapped);
+  onCleanup(() => node.removeEventListener(event, wrapped));
+}
+
+export void onDelegatedEventVoid(Element node, string event, func()->void callback) {
+  onEvent(node, event, callback);
+}
+
+export void onDelegatedClickVoid(Element node, func()->void callback) {
+  onEvent(node, "click", callback);
+}
+
+export class DomEvent {
+  Element node;
+
+  init(Element node) {
+    this.node = node;
+  }
+
+  Element target() {
+    return this.node;
+  }
+
+  Element currentTarget() {
+    return this.node;
+  }
+
+  void preventDefault() {}
+
+  void stopPropagation() {}
+}
+
+export void onDelegatedEvent(Element node, string event, func(DomEvent)->void callback) {
+  func()->void wrapped = () => {
+    callback(new DomEvent(node));
+    flush();
+  };
+  node.addEventListener(event, wrapped);
+  onCleanup(() => node.removeEventListener(event, wrapped));
+}
+
+class IdentityRow<T> {
+  T item;
+  Element node;
+  Signal<int> index;
+  func()->void dispose;
+
+  init(T item, Element node, Signal<int> index, func()->void dispose) {
+    this.item = item;
+    this.node = node;
+    this.index = index;
+    this.dispose = dispose;
+  }
+}
+
+class IdentityTable<T> {
+  IdentityRow<T>[] order;
+
+  init() {
+    this.order = [];
+  }
+}
+
+void identityEach<T>(
+  Element parent,
+  func()->T[] items,
+  func(T, Signal<int>)->Element createRow
+) {
+  Element marker = comment();
+  append(parent, marker);
+  IdentityTable<T> holder = new IdentityTable();
+  func(T[])->void reconcile = (T[] nextItems) => {
+    IdentityRow<T>[] previous = holder.order;
+    IdentityRow<T>[] nextRows = [];
+    for (int index = 0; index < nextItems.length; index++) {
+      T item = nextItems[index];
+      IdentityRow<T>? matched = null;
+      for (int cursor = 0; cursor < previous.length; cursor++) {
+        IdentityRow<T> candidate = previous[cursor];
+        if (candidate.item == item) {
+          matched = candidate;
+          int last = previous.length - 1;
+          previous[cursor] = previous[last];
+          previous.pop();
+          break;
+        }
+      }
+      if (matched != null) {
+        matched.index.write(index);
+        nextRows.push(matched);
+      } else {
+        createRoot((func()->void innerDispose) => {
+          Signal<int> indexSignal = createIntSignal(index);
+          Element node = createRow(item, indexSignal);
+          nextRows.push(new IdentityRow(item, node, indexSignal, innerDispose));
+          return innerDispose;
+        });
+      }
+    }
+    while (previous.length > 0) {
+      IdentityRow<T> leftover = previous[previous.length - 1];
+      previous.pop();
+      leftover.dispose();
+      removeNode(leftover.node);
+    }
+    Element? cursor = marker.nextSibling;
+    for (int index = 0; index < nextRows.length; index++) {
+      IdentityRow<T> row = nextRows[index];
+      if (row.node != cursor) {
+        insertBefore(parent, row.node, cursor);
+      }
+      cursor = row.node.nextSibling;
+    }
+    holder.order = nextRows;
+  };
+  createRenderEffect(() => {
+    T[] nextItems = items();
+    untrack(() => reconcile(nextItems));
+  });
+  onCleanup(() => {
+    while (holder.order.length > 0) {
+      IdentityRow<T> leftover = holder.order[holder.order.length - 1];
+      holder.order.pop();
+      leftover.dispose();
+      removeNode(leftover.node);
+    }
+    removeNode(marker);
+  });
+}

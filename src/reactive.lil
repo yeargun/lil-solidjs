@@ -1,0 +1,706 @@
+extern void queueMicrotask(func()->void callback);
+
+export extern class ObjectCtor {
+  bool is(JsValue left, JsValue right);
+  void defineProperty(JsValue target, string name, JsValue descriptor);
+  string[] keys(JsValue value);
+}
+
+export extern ObjectCtor Object;
+
+class Cleanup {
+  func()->void callback;
+
+  init(func()->void callback) {
+    this.callback = callback;
+  }
+
+  void run() {
+    func()->void callback = this.callback;
+    callback();
+  }
+}
+
+class Unsub {
+  func()->void callback;
+
+  init(func()->void callback) {
+    this.callback = callback;
+  }
+
+  void run() {
+    func()->void callback = this.callback;
+    callback();
+  }
+}
+
+class PendingWrite {
+  func()->void apply;
+
+  init(func()->void apply) {
+    this.apply = apply;
+  }
+
+  void run() {
+    func()->void apply = this.apply;
+    apply();
+  }
+}
+
+PendingWrite[] pendingWrites = [];
+
+int activeListenerId = -1;
+int activeEffectId = -1;
+int activeOwnerId = -1;
+int nextContextId = 1;
+bool flushing = false;
+bool flushScheduled = false;
+bool throwOnPending = false;
+int[] renderQueue = [];
+int[] userQueue = [];
+int[] settledQueue = [];
+
+export class Owner {
+  int id;
+  int parentKind;
+  int parentId;
+  int[] childOwnerIds;
+  int[] childEffectIds;
+  Cleanup[] cleanups;
+  bool disposed;
+
+  init(int id, int parentKind, int parentId) {
+    this.id = id;
+    this.parentKind = parentKind;
+    this.parentId = parentId;
+    this.childOwnerIds = [];
+    this.childEffectIds = [];
+    this.cleanups = [];
+    this.disposed = false;
+  }
+}
+
+export class Effect {
+  int id;
+  int parentKind;
+  int parentId;
+  func()->void callback;
+  Unsub[] unsubs;
+  int[] childOwnerIds;
+  int[] childEffectIds;
+  Cleanup[] cleanups;
+  bool disposed;
+  bool queued;
+  int kind;
+
+  init(
+    int id,
+    int parentKind,
+    int parentId,
+    func()->void callback,
+    int kind
+  ) {
+    this.id = id;
+    this.parentKind = parentKind;
+    this.parentId = parentId;
+    this.callback = callback;
+    this.unsubs = [];
+    this.childOwnerIds = [];
+    this.childEffectIds = [];
+    this.cleanups = [];
+    this.disposed = false;
+    this.queued = false;
+    this.kind = kind;
+  }
+}
+
+Owner[] owners = [];
+int[] freeOwnerIds = [];
+Effect[] effects = [];
+int[] freeEffectIds = [];
+
+export class Signal<T> {
+  T committed;
+  T pending;
+  bool hasPending;
+  bool asyncPending;
+  func(T, T)->bool equals;
+  int[] observerIds;
+
+  init(T initial, func(T, T)->bool equals) {
+    this.committed = initial;
+    this.pending = initial;
+    this.hasPending = false;
+    this.asyncPending = false;
+    this.equals = equals;
+    this.observerIds = [];
+  }
+
+  void subscribe(int effectId) {
+    for (int index = 0; index < this.observerIds.length; index++) {
+      if (this.observerIds[index] == effectId) {
+        return;
+      }
+    }
+    this.observerIds.push(effectId);
+    effects[effectId].unsubs.push(new Unsub(() => this.unsubscribe(effectId)));
+  }
+
+  void unsubscribe(int effectId) {
+    for (int index = 0; index < this.observerIds.length; index++) {
+      if (this.observerIds[index] == effectId) {
+        int last = this.observerIds.length - 1;
+        this.observerIds[index] = this.observerIds[last];
+        this.observerIds.pop();
+        return;
+      }
+    }
+  }
+
+  T read() {
+    if (this.asyncPending && throwOnPending) {
+      throw "NotReady";
+    }
+    if (activeListenerId >= 0) {
+      this.subscribe(activeListenerId);
+    }
+    return this.committed;
+  }
+
+  T peek() {
+    return this.committed;
+  }
+
+  T write(T next) {
+    func(T, T)->bool equals = this.equals;
+    T baseline = this.committed;
+    if (this.hasPending) {
+      baseline = this.pending;
+    }
+    if (equals(baseline, next)) {
+      return next;
+    }
+    this.pending = next;
+    if (!this.hasPending) {
+      this.hasPending = true;
+      Signal<T> signal = this;
+      pendingWrites.push(new PendingWrite(() => signal.applyPending()));
+    }
+    scheduleFlush();
+    return next;
+  }
+
+  void applyPending() {
+    if (!this.hasPending) {
+      return;
+    }
+    this.hasPending = false;
+    func(T, T)->bool equals = this.equals;
+    if (equals(this.committed, this.pending)) {
+      return;
+    }
+    this.committed = this.pending;
+    notifyObservers(this.observerIds);
+  }
+
+  T update(func(T)->T updater) {
+    T current = this.committed;
+    if (this.hasPending) {
+      current = this.pending;
+    }
+    return this.write(updater(current));
+  }
+
+  void commitNow(T next) {
+    func(T, T)->bool equals = this.equals;
+    this.hasPending = false;
+    if (equals(this.committed, next)) {
+      return;
+    }
+    this.committed = next;
+    this.pending = next;
+    notifyObservers(this.observerIds);
+  }
+}
+
+void notifyObservers(int[] observerIds) {
+  for (int index = 0; index < observerIds.length; index++) {
+    queueEffect(observerIds[index]);
+  }
+}
+
+void queueEffect(int effectId) {
+  if (effectId < 0 || effectId >= effects.length) {
+    return;
+  }
+  Effect effect = effects[effectId];
+  if (effect.disposed || effect.queued) {
+    return;
+  }
+  effect.queued = true;
+  if (effect.kind == 0) {
+    renderQueue.push(effectId);
+  } else {
+    userQueue.push(effectId);
+  }
+}
+
+void scheduleFlush() {
+  if (flushing || flushScheduled) {
+    return;
+  }
+  flushScheduled = true;
+  queueMicrotask(() => {
+    flushScheduled = false;
+    flush();
+  });
+}
+
+void applyPendingWrites() {
+  PendingWrite[] queued = pendingWrites;
+  pendingWrites = [];
+  for (int index = 0; index < queued.length; index++) {
+    queued[index].run();
+  }
+}
+
+void runCleanups(Cleanup[] cleanups) {
+  while (cleanups.length > 0) {
+    int index = cleanups.length - 1;
+    Cleanup cleanup = cleanups[index];
+    cleanups.pop();
+    cleanup.run();
+  }
+}
+
+void runUnsubs(Unsub[] unsubs) {
+  while (unsubs.length > 0) {
+    int index = unsubs.length - 1;
+    Unsub unsub = unsubs[index];
+    unsubs.pop();
+    unsub.run();
+  }
+}
+
+void disposeOwner(int ownerId) {
+  if (ownerId < 0 || ownerId >= owners.length) {
+    return;
+  }
+  Owner owner = owners[ownerId];
+  if (owner.disposed) {
+    return;
+  }
+  owner.disposed = true;
+  while (owner.childEffectIds.length > 0) {
+    int index = owner.childEffectIds.length - 1;
+    int child = owner.childEffectIds[index];
+    owner.childEffectIds.pop();
+    disposeEffect(child);
+  }
+  while (owner.childOwnerIds.length > 0) {
+    int index = owner.childOwnerIds.length - 1;
+    int child = owner.childOwnerIds[index];
+    owner.childOwnerIds.pop();
+    disposeOwner(child);
+  }
+  runCleanups(owner.cleanups);
+  freeOwnerIds.push(ownerId);
+}
+
+void disposeEffect(int effectId) {
+  if (effectId < 0 || effectId >= effects.length) {
+    return;
+  }
+  Effect effect = effects[effectId];
+  if (effect.disposed) {
+    return;
+  }
+  effect.disposed = true;
+  effect.queued = false;
+  runUnsubs(effect.unsubs);
+  while (effect.childEffectIds.length > 0) {
+    int index = effect.childEffectIds.length - 1;
+    int child = effect.childEffectIds[index];
+    effect.childEffectIds.pop();
+    disposeEffect(child);
+  }
+  while (effect.childOwnerIds.length > 0) {
+    int index = effect.childOwnerIds.length - 1;
+    int child = effect.childOwnerIds[index];
+    effect.childOwnerIds.pop();
+    disposeOwner(child);
+  }
+  runCleanups(effect.cleanups);
+  freeEffectIds.push(effectId);
+}
+
+void resetEffect(int effectId) {
+  Effect effect = effects[effectId];
+  runUnsubs(effect.unsubs);
+  while (effect.childEffectIds.length > 0) {
+    int index = effect.childEffectIds.length - 1;
+    int child = effect.childEffectIds[index];
+    effect.childEffectIds.pop();
+    disposeEffect(child);
+  }
+  while (effect.childOwnerIds.length > 0) {
+    int index = effect.childOwnerIds.length - 1;
+    int child = effect.childOwnerIds[index];
+    effect.childOwnerIds.pop();
+    disposeOwner(child);
+  }
+  runCleanups(effect.cleanups);
+}
+
+void runEffect(int effectId) {
+  if (effectId < 0 || effectId >= effects.length) {
+    return;
+  }
+  Effect effect = effects[effectId];
+  effect.queued = false;
+  if (effect.disposed) {
+    return;
+  }
+  resetEffect(effectId);
+  int previousListener = activeListenerId;
+  int previousEffect = activeEffectId;
+  int previousOwner = activeOwnerId;
+  activeListenerId = effectId;
+  activeEffectId = effectId;
+  activeOwnerId = -1;
+  try {
+    func()->void callback = effect.callback;
+    callback();
+  } finally {
+    activeListenerId = previousListener;
+    activeEffectId = previousEffect;
+    activeOwnerId = previousOwner;
+  }
+}
+
+void drainQueue(int[] queue) {
+  for (int index = 0; index < queue.length; index++) {
+    runEffect(queue[index]);
+  }
+}
+
+export void flush() {
+  if (flushing) {
+    return;
+  }
+  flushing = true;
+  flushScheduled = false;
+  try {
+    int safety = 0;
+    while (
+      pendingWrites.length > 0 ||
+      renderQueue.length > 0 ||
+      userQueue.length > 0
+    ) {
+      safety += 1;
+      if (safety > 1024) {
+        throw "Reactive graph did not settle.";
+      }
+      applyPendingWrites();
+      int[] renders = renderQueue;
+      renderQueue = [];
+      drainQueue(renders);
+      if (pendingWrites.length > 0 || renderQueue.length > 0) {
+        continue;
+      }
+      int[] users = userQueue;
+      userQueue = [];
+      drainQueue(users);
+    }
+    int[] settled = settledQueue;
+    settledQueue = [];
+    for (int index = 0; index < settled.length; index++) {
+      runEffect(settled[index]);
+    }
+  } finally {
+    flushing = false;
+  }
+}
+
+int allocOwner(int parentKind, int parentId) {
+  int id = -1;
+  if (freeOwnerIds.length > 0) {
+    id = freeOwnerIds[freeOwnerIds.length - 1];
+    freeOwnerIds.pop();
+    owners[id] = new Owner(id, parentKind, parentId);
+  } else {
+    id = owners.length;
+    owners.push(new Owner(id, parentKind, parentId));
+  }
+  if (parentKind == 0 && parentId >= 0) {
+    owners[parentId].childOwnerIds.push(id);
+  } else if (parentKind == 1 && parentId >= 0) {
+    effects[parentId].childOwnerIds.push(id);
+  }
+  return id;
+}
+
+int allocEffect(func()->void callback, int kind) {
+  int parentKind = 0;
+  int parentId = activeOwnerId;
+  if (activeEffectId >= 0) {
+    parentKind = 1;
+    parentId = activeEffectId;
+  }
+  int id = -1;
+  if (freeEffectIds.length > 0) {
+    id = freeEffectIds[freeEffectIds.length - 1];
+    freeEffectIds.pop();
+    effects[id] = new Effect(id, parentKind, parentId, callback, kind);
+  } else {
+    id = effects.length;
+    effects.push(new Effect(id, parentKind, parentId, callback, kind));
+  }
+  if (parentKind == 0 && parentId >= 0) {
+    owners[parentId].childEffectIds.push(id);
+  } else if (parentKind == 1 && parentId >= 0) {
+    effects[parentId].childEffectIds.push(id);
+  }
+  return id;
+}
+
+export Signal<T> createSignal<T>(T initial, func(T, T)->bool equals) {
+  return new Signal(initial, equals);
+}
+
+export Signal<int> createIntSignal(int initial) {
+  return createSignal(initial, (int previous, int next) => previous == next);
+}
+
+export Signal<bool> createBoolSignal(bool initial) {
+  return createSignal(initial, (bool previous, bool next) => previous == next);
+}
+
+export Signal<string> createStringSignal(string initial) {
+  return createSignal(initial, (string previous, string next) => previous == next);
+}
+
+export Signal<JsValue> createJsSignal(JsValue initial) {
+  return createSignal(initial, (JsValue previous, JsValue next) => Object.is(previous, next));
+}
+
+export T signalGet<T>(Signal<T> signal) {
+  return signal.read();
+}
+
+export T signalSet<T>(Signal<T> signal, T value) {
+  return signal.write(value);
+}
+
+export void writeSignal<T>(Signal<T> signal, T value) {
+  signal.write(value);
+}
+
+export T signalUpdate<T>(Signal<T> signal, func(T)->T updater) {
+  return signal.update(updater);
+}
+
+export T signalPeek<T>(Signal<T> signal) {
+  return signal.peek();
+}
+
+export bool signalPending<T>(Signal<T> signal) {
+  if (activeListenerId >= 0) {
+    signal.subscribe(activeListenerId);
+  }
+  return signal.asyncPending;
+}
+
+export void signalMarkPending<T>(Signal<T> signal, bool pending) {
+  if (signal.asyncPending == pending) {
+    return;
+  }
+  signal.asyncPending = pending;
+  notifyObservers(signal.observerIds);
+}
+
+export int createRenderEffect(func()->void callback) {
+  int id = allocEffect(callback, 0);
+  runEffect(id);
+  return id;
+}
+
+export int createUserEffect(func()->void callback) {
+  int id = allocEffect(callback, 1);
+  queueEffect(id);
+  scheduleFlush();
+  return id;
+}
+
+export void createEffect<T>(func()->T compute, func(T)->void apply) {
+  createUserEffect(() => {
+    T value = compute();
+    int previousListener = activeListenerId;
+    activeListenerId = -1;
+    apply(value);
+    activeListenerId = previousListener;
+  });
+}
+
+export void createRenderBind<T>(func()->T compute, func(T)->void apply) {
+  createRenderEffect(() => {
+    T value = compute();
+    int previousListener = activeListenerId;
+    activeListenerId = -1;
+    apply(value);
+    activeListenerId = previousListener;
+  });
+}
+
+export Signal<T> createMemo<T>(T seed, func()->T compute, func(T, T)->bool equals) {
+  Signal<T> signal = createSignal(seed, equals);
+  createRenderEffect(() => {
+    signal.commitNow(compute());
+  });
+  return signal;
+}
+
+export Signal<int> createIntMemo(func()->int compute) {
+  return createMemo(0, compute, (int previous, int next) => previous == next);
+}
+
+export Signal<bool> createBoolMemo(func()->bool compute) {
+  return createMemo(false, compute, (bool previous, bool next) => previous == next);
+}
+
+export Signal<string> createStringMemo(func()->string compute) {
+  return createMemo("", compute, (string previous, string next) => previous == next);
+}
+
+export T createRoot<T>(func(func()->void)->T callback) {
+  int previousOwner = activeOwnerId;
+  int previousEffect = activeEffectId;
+  int previousListener = activeListenerId;
+  int ownerId = allocOwner(0, -1);
+  activeOwnerId = ownerId;
+  activeEffectId = -1;
+  activeListenerId = -1;
+  try {
+    return callback(() => disposeOwner(ownerId));
+  } finally {
+    activeOwnerId = previousOwner;
+    activeEffectId = previousEffect;
+    activeListenerId = previousListener;
+  }
+}
+
+export T untrack<T>(func()->T callback) {
+  int previousListener = activeListenerId;
+  activeListenerId = -1;
+  try {
+    return callback();
+  } finally {
+    activeListenerId = previousListener;
+  }
+}
+
+export void onCleanup(func()->void callback) {
+  if (activeEffectId >= 0) {
+    effects[activeEffectId].cleanups.push(new Cleanup(callback));
+    return;
+  }
+  if (activeOwnerId >= 0) {
+    owners[activeOwnerId].cleanups.push(new Cleanup(callback));
+  }
+}
+
+export void onSettled(func()->void callback) {
+  int id = allocEffect(callback, 1);
+  settledQueue.push(id);
+  scheduleFlush();
+}
+
+export class Context<T> {
+  int id;
+  T defaultValue;
+  bool hasDefault;
+
+  init(int id, T defaultValue, bool hasDefault) {
+    this.id = id;
+    this.defaultValue = defaultValue;
+    this.hasDefault = hasDefault;
+  }
+}
+
+class ContextSlot {
+  int id;
+  JsValue value;
+
+  init(int id, JsValue value) {
+    this.id = id;
+    this.value = value;
+  }
+}
+
+ContextSlot[] contextStack = [];
+
+export Context<T> createContext<T>(T defaultValue) {
+  int id = nextContextId;
+  nextContextId += 1;
+  return new Context(id, defaultValue, true);
+}
+
+export U provideContext<T, U>(Context<T> context, T value, func()->U child) {
+  contextStack.push(new ContextSlot(context.id, JS.assume(value)));
+  try {
+    return child();
+  } finally {
+    contextStack.pop();
+  }
+}
+
+export T useContext<T>(Context<T> context) {
+  for (int index = contextStack.length - 1; index >= 0; index--) {
+    ContextSlot slot = contextStack[index];
+    if (slot.id == context.id) {
+      return JS.assume(slot.value);
+    }
+  }
+  if (context.hasDefault) {
+    return context.defaultValue;
+  }
+  throw "ContextNotFoundError";
+}
+
+export bool isPending<T>(Signal<T> signal) {
+  return signalPending(signal);
+}
+
+export T latest<T>(Signal<T> signal) {
+  bool previous = throwOnPending;
+  throwOnPending = false;
+  try {
+    return signal.read();
+  } finally {
+    throwOnPending = previous;
+  }
+}
+
+export void enablePendingThrows(bool enabled) {
+  throwOnPending = enabled;
+}
+
+export int diagnosticOwnerSlots() {
+  return owners.length;
+}
+
+export int diagnosticEffectSlots() {
+  return effects.length;
+}
+
+export int diagnosticFreeOwnerSlots() {
+  return freeOwnerIds.length;
+}
+
+export int diagnosticFreeEffectSlots() {
+  return freeEffectIds.length;
+}
+
+export int diagnosticPendingEffects() {
+  return renderQueue.length + userQueue.length;
+}

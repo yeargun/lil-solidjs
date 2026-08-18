@@ -1,0 +1,395 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-08-18T17:28:58.425Z",
+  "compression": {
+    "gzip": 9,
+    "brotli": 11
+  },
+  "solid": "solid-js@2.0.0-rc.0 + @solidjs/web@2.0.0-rc.0",
+  "solidlil": "closed-world LilScript production",
+  "cases": 14,
+  "metrics": {
+    "raw": {
+      "solid": 444112,
+      "solidlil": 72115,
+      "weightedReduction": 83.76197896026227,
+      "medianReduction": 84.23690359283465,
+      "minimumReduction": 78.73945439990146,
+      "maximumReduction": 88.54476871153464,
+      "wins": 14
+    },
+    "gzip": {
+      "solid": 172356,
+      "solidlil": 30895,
+      "weightedReduction": 82.07489150363202,
+      "medianReduction": 82.63478337598164,
+      "minimumReduction": 76.65672110552764,
+      "maximumReduction": 86.90042826552462,
+      "wins": 14
+    },
+    "brotli": {
+      "solid": 156227,
+      "solidlil": 26985,
+      "weightedReduction": 82.72705742285265,
+      "medianReduction": 83.27808112324493,
+      "minimumReduction": 77.40059038027437,
+      "maximumReduction": 87.26949303290839,
+      "wins": 14
+    }
+  },
+  "keyedPerformance": {
+    "raw": 7463,
+    "gzip": 2919,
+    "brotli": 2565
+  },
+  "artifacts": {
+    "core": {
+      "raw": 5373,
+      "gzip": 2112,
+      "brotli": 1899
+    },
+    "web": {
+      "raw": 8721,
+      "gzip": 3305,
+      "brotli": 2943
+    },
+    "full": {
+      "raw": 10618,
+      "gzip": 3958,
+      "brotli": 3525
+    },
+    "index.bundle": {
+      "raw": 5801,
+      "gzip": 2361,
+      "brotli": 2114
+    }
+  },
+  "examples": [
+    {
+      "id": "counter",
+      "title": "Counter",
+      "group": "reactive",
+      "solid": {
+        "raw": 28046,
+        "gzip": 10954,
+        "brotli": 9941
+      },
+      "solidlil": {
+        "raw": 3804,
+        "gzip": 1656,
+        "brotli": 1422
+      },
+      "reduction": {
+        "raw": 86.43656849461598,
+        "gzip": 84.88223480007304,
+        "brotli": 85.69560406397747
+      }
+    },
+    {
+      "id": "effects",
+      "title": "Split effects",
+      "group": "reactive",
+      "solid": {
+        "raw": 28319,
+        "gzip": 11090,
+        "brotli": 10047
+      },
+      "solidlil": {
+        "raw": 4176,
+        "gzip": 1851,
+        "brotli": 1614
+      },
+      "reduction": {
+        "raw": 85.25371658603764,
+        "gzip": 83.3092876465284,
+        "brotli": 83.93550313526426
+      }
+    },
+    {
+      "id": "form-binding",
+      "title": "Form binding",
+      "group": "reactive",
+      "solid": {
+        "raw": 28156,
+        "gzip": 11014,
+        "brotli": 10013
+      },
+      "solidlil": {
+        "raw": 4097,
+        "gzip": 1774,
+        "brotli": 1555
+      },
+      "reduction": {
+        "raw": 85.44892740446086,
+        "gzip": 83.89322680225169,
+        "brotli": 84.470188754619
+      }
+    },
+    {
+      "id": "context-theme",
+      "title": "Context",
+      "group": "reactive",
+      "solid": {
+        "raw": 29093,
+        "gzip": 11333,
+        "brotli": 10256
+      },
+      "solidlil": {
+        "raw": 4603,
+        "gzip": 1968,
+        "brotli": 1715
+      },
+      "reduction": {
+        "raw": 84.17832468291341,
+        "gzip": 82.63478337598164,
+        "brotli": 83.27808112324493
+      }
+    },
+    {
+      "id": "async-profile",
+      "title": "Async memo",
+      "group": "reactive",
+      "solid": {
+        "raw": 35527,
+        "gzip": 13724,
+        "brotli": 12454
+      },
+      "solidlil": {
+        "raw": 5052,
+        "gzip": 2179,
+        "brotli": 1888
+      },
+      "reduction": {
+        "raw": 85.77982942550736,
+        "gzip": 84.12270475080152,
+        "brotli": 84.84021198008672
+      }
+    },
+    {
+      "id": "show-switch",
+      "title": "Show / Switch",
+      "group": "control",
+      "solid": {
+        "raw": 30097,
+        "gzip": 11732,
+        "brotli": 10644
+      },
+      "solidlil": {
+        "raw": 5644,
+        "gzip": 2430,
+        "brotli": 2124
+      },
+      "reduction": {
+        "raw": 81.24730039538825,
+        "gzip": 79.28741902488919,
+        "brotli": 80.04509582863585
+      }
+    },
+    {
+      "id": "repeat-grid",
+      "title": "Repeat grid",
+      "group": "control",
+      "solid": {
+        "raw": 29531,
+        "gzip": 11569,
+        "brotli": 10485
+      },
+      "solidlil": {
+        "raw": 4655,
+        "gzip": 2013,
+        "brotli": 1755
+      },
+      "reduction": {
+        "raw": 84.23690359283465,
+        "gzip": 82.60005186273662,
+        "brotli": 83.2618025751073
+      }
+    },
+    {
+      "id": "nested-tree",
+      "title": "Nested tree",
+      "group": "control",
+      "solid": {
+        "raw": 31921,
+        "gzip": 12415,
+        "brotli": 11246
+      },
+      "solidlil": {
+        "raw": 6509,
+        "gzip": 2702,
+        "brotli": 2373
+      },
+      "reduction": {
+        "raw": 79.60903480467404,
+        "gzip": 78.23600483286347,
+        "brotli": 78.89916414725235
+      }
+    },
+    {
+      "id": "error-reset",
+      "title": "Error reset",
+      "group": "control",
+      "solid": {
+        "raw": 30367,
+        "gzip": 11828,
+        "brotli": 10752
+      },
+      "solidlil": {
+        "raw": 5322,
+        "gzip": 2274,
+        "brotli": 2001
+      },
+      "reduction": {
+        "raw": 82.47439654888531,
+        "gzip": 80.77443354751436,
+        "brotli": 81.38950892857143
+      }
+    },
+    {
+      "id": "todolist",
+      "title": "Todo list",
+      "group": "apps",
+      "solid": {
+        "raw": 31926,
+        "gzip": 12446,
+        "brotli": 11269
+      },
+      "solidlil": {
+        "raw": 6379,
+        "gzip": 2688,
+        "brotli": 2357
+      },
+      "reduction": {
+        "raw": 80.0194199085385,
+        "gzip": 78.40269966254219,
+        "brotli": 79.08421332860058
+      }
+    },
+    {
+      "id": "store-cart",
+      "title": "Store cart",
+      "group": "apps",
+      "solid": {
+        "raw": 50370,
+        "gzip": 18680,
+        "brotli": 16865
+      },
+      "solidlil": {
+        "raw": 5770,
+        "gzip": 2447,
+        "brotli": 2147
+      },
+      "reduction": {
+        "raw": 88.54476871153464,
+        "gzip": 86.90042826552462,
+        "brotli": 87.26949303290839
+      }
+    },
+    {
+      "id": "keyed",
+      "title": "Keyed table",
+      "group": "performance",
+      "solid": {
+        "raw": 32478,
+        "gzip": 12736,
+        "brotli": 11518
+      },
+      "solidlil": {
+        "raw": 6905,
+        "gzip": 2973,
+        "brotli": 2603
+      },
+      "reduction": {
+        "raw": 78.73945439990146,
+        "gzip": 76.65672110552764,
+        "brotli": 77.40059038027437
+      }
+    },
+    {
+      "id": "svg-clock",
+      "title": "SVG clock",
+      "group": "visual",
+      "solid": {
+        "raw": 28726,
+        "gzip": 11302,
+        "brotli": 10266
+      },
+      "solidlil": {
+        "raw": 4087,
+        "gzip": 1833,
+        "brotli": 1600
+      },
+      "reduction": {
+        "raw": 85.7724709322565,
+        "gzip": 83.7816315696337,
+        "brotli": 84.41457237482953
+      }
+    },
+    {
+      "id": "portal-modal",
+      "title": "Portal modal",
+      "group": "visual",
+      "solid": {
+        "raw": 29555,
+        "gzip": 11533,
+        "brotli": 10471
+      },
+      "solidlil": {
+        "raw": 5112,
+        "gzip": 2107,
+        "brotli": 1831
+      },
+      "reduction": {
+        "raw": 82.70343427508035,
+        "gzip": 81.73068585797277,
+        "brotli": 82.5136090153758
+      }
+    }
+  ],
+  "performance": {
+    "generatedAt": "2026-08-18T17:28:59.015Z",
+    "node": "v20.12.0",
+    "iterations": {
+      "signal": 50000,
+      "memo": 50000,
+      "effect": 10000
+    },
+    "nodeMs": {
+      "solidlil": {
+        "signal50k": 27.062125,
+        "memo50k": 50.24775,
+        "effect10k": 11.193958
+      },
+      "solid": {
+        "signal50k": 20.53225,
+        "memo50k": 32.310417,
+        "effect10k": 15.703541
+      },
+      "ratio": {
+        "signal50k": 1.3180301720464147,
+        "memo50k": 1.5551563447788372,
+        "effect10k": 0.7128301826957373
+      }
+    },
+    "browserMs": {
+      "solid": {
+        "create1k": 54,
+        "updateEvery10th": 34.59999990463257,
+        "swap": 43.89999985694885,
+        "clear": 33
+      },
+      "solidlil": {
+        "create1k": 56.80000019073486,
+        "updateEvery10th": 30.90000009536743,
+        "swap": 63,
+        "clear": 30.399999856948853
+      },
+      "ratio": {
+        "create1k": 1.0518518553839789,
+        "updateEvery10th": 0.8930635890328501,
+        "swap": 1.4350797313277859,
+        "clear": 0.9212121168772379
+      }
+    }
+  }
+}

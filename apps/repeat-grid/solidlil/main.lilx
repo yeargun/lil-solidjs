@@ -1,0 +1,27 @@
+import { Signal, append, createIntSignal, render } from "solidlil";
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<int> count = createIntSignal(16);
+  Element view = (
+    <div class="stack">
+      <h2>Repeat</h2>
+      <div class="row">
+        <button onClick={() => {
+          int next = count.read() - 4;
+          if (next < 0) {
+            next = 0;
+          }
+          count.write(next);
+        }}>-4</button>
+        <span>{`${count.read()} cells`}</span>
+        <button onClick={() => { count.write(count.read() + 4); }}>+4</button>
+      </div>
+      <div class="grid">
+        <Repeat count={count.read()}>
+          {(int index) => <div class="cell">{index + 1}</div>}
+        </Repeat>
+      </div>
+    </div>
+  );
+  append(root, view);
+});

@@ -1,0 +1,68 @@
+export extern class CSSStyleDeclaration {
+  void setProperty(string name, string value);
+}
+
+export extern class DOMTokenList {
+  void add(string token);
+  void remove(string token);
+  void toggle(string token, bool force);
+}
+
+export extern class Element {
+  string id;
+  string className;
+  string textContent;
+  string innerHTML;
+  string value;
+  bool checked;
+  bool disabled;
+  bool hidden;
+  int nodeType;
+  CSSStyleDeclaration style;
+  DOMTokenList classList;
+  Element? firstChild;
+  Element? lastChild;
+  Element? nextSibling;
+  Element? previousSibling;
+  Element? parentNode;
+  Element content;
+  Element cloneNode(bool deep);
+  Element appendChild(Element child);
+  Element insertBefore(Element child, Element? before);
+  Element removeChild(Element child);
+  void setAttribute(string name, string value);
+  void removeAttribute(string name);
+  string? getAttribute(string name);
+  void addEventListener(string type, func()->void listener);
+  void removeEventListener(string type, func()->void listener);
+}
+
+export extern class Document {
+  Element body;
+  Element documentElement;
+  Element createDocumentFragment();
+  Element createElement(string tag);
+  Element createElementNS(string namespace, string tag);
+  Element createTextNode(string data);
+  Element createComment(string data);
+  Element? querySelector(string selector);
+  Element? getElementById(string id);
+}
+
+export extern Document document;
+
+export extern class Window {
+  int setTimeout(func()->void callback, int ms);
+  void clearTimeout(int id);
+  int setInterval(func()->void callback, int ms);
+  void clearInterval(int id);
+}
+
+export extern Window window;
+
+export extern class MathHost {
+  float random();
+  float floor(float value);
+}
+
+export extern MathHost Math;

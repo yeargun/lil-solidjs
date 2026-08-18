@@ -1,0 +1,22 @@
+import { Signal, append, createEffect, createIntSignal, createStringSignal, render } from "solidlil";
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<int> ticks = createIntSignal(0);
+  Signal<string> title = createStringSignal("idle");
+  createEffect(
+    () => ticks.read(),
+    (int value) => {
+      title.write(`ticks ${value}`);
+    }
+  );
+  Element view = (
+    <div class="stack">
+      <h2>Split effects</h2>
+      <button class="primary" onClick={() => { ticks.write(ticks.read() + 1); }}>
+        {`Tick ${ticks.read()}`}
+      </button>
+      <p class="muted">{`Apply phase wrote: ${title.read()}`}</p>
+    </div>
+  );
+  append(root, view);
+});

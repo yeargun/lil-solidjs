@@ -1,0 +1,65 @@
+import { Signal, Store, append, createIntSignal, createStore, render } from "solidlil";
+
+class CartItem {
+  int id;
+  string name;
+  int price;
+  Signal<int> qty;
+
+  init(int id, string name, int price, int qty) {
+    this.id = id;
+    this.name = name;
+    this.price = price;
+    this.qty = createIntSignal(qty);
+  }
+}
+
+class Cart {
+  CartItem[] items;
+
+  init() {
+    this.items = [
+      new CartItem(1, "Lil mug", 12, 1),
+      new CartItem(2, "Solid pin", 8, 2),
+      new CartItem(3, "Codec tee", 24, 1)
+    ];
+  }
+}
+
+func()->void dispose = render("#app", (Element root) => {
+  Store<Cart> cart = createStore(new Cart());
+  Signal<CartItem[]> items = createMemo([], () => cart.read().items, (CartItem[] a, CartItem[] b) => false);
+  Element view = (
+    <div class="stack">
+      <h2>Cart</h2>
+      <For each={items}>
+        {(CartItem item) => (
+          <div class="todo-item">
+            <span>{item.name}</span>
+            <button onClick={() => {
+              int next = item.qty.read() - 1;
+              if (next < 0) {
+                next = 0;
+              }
+              item.qty.write(next);
+            }}>-</button>
+            <strong>{`${item.qty.read()}`}</strong>
+            <button onClick={() => { item.qty.write(item.qty.read() + 1); }}>+</button>
+          </div>
+        )}
+      </For>
+      <p>{totalLabel(cart)}</p>
+    </div>
+  );
+  append(root, view);
+});
+
+string totalLabel(Store<Cart> cart) {
+  Cart data = cart.read();
+  int sum = 0;
+  for (int index = 0; index < data.items.length; index++) {
+    CartItem item = data.items[index];
+    sum += item.price * item.qty.read();
+  }
+  return `Total $${sum}`;
+}

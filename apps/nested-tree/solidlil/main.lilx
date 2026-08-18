@@ -1,0 +1,64 @@
+import { Signal, append, createBoolSignal, createSignal, render } from "solidlil";
+
+class Node {
+  int id;
+  string name;
+  Signal<bool> open;
+  Signal<Node[]> kids;
+
+  init(int id, string name, Node[] children) {
+    this.id = id;
+    this.open = createBoolSignal(true);
+    this.name = name;
+    this.kids = createSignal(children, (Node[] previous, Node[] next) => previous == next);
+  }
+}
+
+string toggleLabel(Node node) {
+  if (node.kids.read().length == 0) {
+    return "·";
+  }
+  if (node.open.read()) {
+    return "−";
+  }
+  return "+";
+}
+
+Element TreeView(JsValue props) {
+  Node node = componentProp(props, "node");
+  return (
+    <div>
+      <div class="row">
+        <button onClick={() => { node.open.write(!node.open.read()); }}>
+          {toggleLabel(node)}
+        </button>
+        <span>{node.name}</span>
+      </div>
+      <Show when={node.open.read() && node.kids.read().length > 0}>
+        <div>
+          <For each={node.kids}>
+            {(Node child) => <TreeView node={child} />}
+          </For>
+        </div>
+      </Show>
+    </div>
+  );
+}
+
+func()->void dispose = render("#app", (Element root) => {
+  Node tree = new Node(1, "src", [
+    new Node(2, "reactive.lil", []),
+    new Node(3, "web.lil", []),
+    new Node(4, "apps", [
+      new Node(5, "counter", []),
+      new Node(6, "keyed", [])
+    ])
+  ]);
+  Element view = (
+    <div class="stack">
+      <h2>Nested tree</h2>
+      <TreeView node={tree} />
+    </div>
+  );
+  append(root, view);
+});

@@ -1,0 +1,16 @@
+export const apps = [
+  { id: "counter", title: "Counter", group: "reactive" },
+  { id: "effects", title: "Split effects", group: "reactive" },
+  { id: "form-binding", title: "Form binding", group: "reactive" },
+  { id: "context-theme", title: "Context", group: "reactive" },
+  { id: "async-profile", title: "Async memo", group: "reactive" },
+  { id: "show-switch", title: "Show / Switch", group: "control" },
+  { id: "repeat-grid", title: "Repeat grid", group: "control" },
+  { id: "nested-tree", title: "Nested tree", group: "control" },
+  { id: "error-reset", title: "Error reset", group: "control" },
+  { id: "todolist", title: "Todo list", group: "apps" },
+  { id: "store-cart", title: "Store cart", group: "apps" },
+  { id: "keyed", title: "Keyed table", group: "performance" },
+  { id: "svg-clock", title: "SVG clock", group: "visual" },
+  { id: "portal-modal", title: "Portal modal", group: "visual" },
+]

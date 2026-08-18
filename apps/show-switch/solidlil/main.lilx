@@ -1,0 +1,48 @@
+import { Signal, append, createIntSignal, render } from "solidlil";
+
+string panelLabel(Signal<int> open) {
+  if (open.read() != 0) {
+    return "Hide panel";
+  }
+  return "Show panel";
+}
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<int> open = createIntSignal(1);
+  Signal<int> tab = createIntSignal(0);
+  Element view = (
+    <div class="stack">
+      <h2>Control flow</h2>
+      <div class="row">
+        <button onClick={() => {
+          if (open.read() != 0) {
+            open.write(0);
+          } else {
+            open.write(1);
+          }
+        }}>
+          {panelLabel(open)}
+        </button>
+        <button onClick={() => { tab.write(0); }}>Home</button>
+        <button onClick={() => { tab.write(1); }}>Settings</button>
+        <button onClick={() => { tab.write(2); }}>About</button>
+      </div>
+      <Show when={open.read() != 0} fallback={<p class="muted">Panel hidden</p>}>
+        <div class="card">
+          <Switch fallback={<p>Unknown tab</p>}>
+            <Match when={tab.read() == 0}>
+              <p>Home: fine-grained updates, no VDOM.</p>
+            </Match>
+            <Match when={tab.read() == 1}>
+              <p>Settings: queued writes flush before paint.</p>
+            </Match>
+            <Match when={tab.read() == 2}>
+              <p>About: Solid 2.0 client semantics in LilScript.</p>
+            </Match>
+          </Switch>
+        </div>
+      </Show>
+    </div>
+  );
+  append(root, view);
+});

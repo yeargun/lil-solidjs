@@ -1,0 +1,22 @@
+import { Signal, append, createBoolSignal, hostDocument, render } from "solidlil";
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<bool> open = createBoolSignal(false);
+  Element view = (
+    <div class="stack">
+      <h2>Portal modal</h2>
+      <button class="primary" onClick={() => { open.write(true); }}>Open modal</button>
+      <Show when={open.read()}>
+        <Portal mount={hostDocument().body}>
+          <div class="modal-back">
+            <div class="modal">
+              <h3>Portaled overlay</h3>
+              <button onClick={() => { open.write(false); }}>Close</button>
+            </div>
+          </div>
+        </Portal>
+      </Show>
+    </div>
+  );
+  append(root, view);
+});

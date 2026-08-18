@@ -1,0 +1,46 @@
+{
+  "generatedAt": "2026-08-18T17:28:59.015Z",
+  "node": "v20.12.0",
+  "iterations": {
+    "signal": 50000,
+    "memo": 50000,
+    "effect": 10000
+  },
+  "nodeMs": {
+    "solidlil": {
+      "signal50k": 27.062125,
+      "memo50k": 50.24775,
+      "effect10k": 11.193958
+    },
+    "solid": {
+      "signal50k": 20.53225,
+      "memo50k": 32.310417,
+      "effect10k": 15.703541
+    },
+    "ratio": {
+      "signal50k": 1.3180301720464147,
+      "memo50k": 1.5551563447788372,
+      "effect10k": 0.7128301826957373
+    }
+  },
+  "browserMs": {
+    "solid": {
+      "create1k": 54,
+      "updateEvery10th": 34.59999990463257,
+      "swap": 43.89999985694885,
+      "clear": 33
+    },
+    "solidlil": {
+      "create1k": 56.80000019073486,
+      "updateEvery10th": 30.90000009536743,
+      "swap": 63,
+      "clear": 30.399999856948853
+    },
+    "ratio": {
+      "create1k": 1.0518518553839789,
+      "updateEvery10th": 0.8930635890328501,
+      "swap": 1.4350797313277859,
+      "clear": 0.9212121168772379
+    }
+  }
+}
