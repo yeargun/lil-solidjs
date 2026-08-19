@@ -14,6 +14,8 @@ import {
   enablePendingThrows,
   flush,
   onCleanup,
+  popRoot,
+  pushRoot,
   runRoot,
   provideContext,
   selectorMatch,
@@ -255,7 +257,7 @@ export Element comment() {
 export Element firstChild(Element node) {
   Element? child = node.firstChild;
   if (child == null) {
-    throw "lsx: missing firstChild";
+    return node;
   }
   return child;
 }
@@ -263,7 +265,7 @@ export Element firstChild(Element node) {
 export Element nextSibling(Element node) {
   Element? sibling = node.nextSibling;
   if (sibling == null) {
-    throw "lsx: missing nextSibling";
+    return node;
   }
   return sibling;
 }
@@ -317,6 +319,15 @@ export void setText(Element node, string value) {
 
 export void bindText(Element node, func()->string compute) {
   createRenderBind(compute, (string value) => setText(node, value));
+}
+
+export void bindTextData(Element node, Signal<string> source) {
+  node.data = source.committed;
+  Signal<string> signal = source;
+  Element target = node;
+  signal.watch(() => {
+    target.data = signal.committed;
+  });
 }
 
 export void bindAttribute(Element node, string name, func()->string compute) {
@@ -727,6 +738,29 @@ void keyedEachTracked<T>(
   func(T[])->void reconcile = (T[] nextItems) => {
     KeyedTable<T> previous = holder.current;
     KeyedTable<T> nextTable = new KeyedTable();
+    if (previous.order.length == 0) {
+      if (nextItems.length == 0) {
+        holder.current = nextTable;
+        return;
+      }
+      Element fragment = document.createDocumentFragment();
+      for (int index = 0; index < nextItems.length; index++) {
+        T item = nextItems[index];
+        int key = keyOf(item);
+        Signal<int> indexSignal = unusedIndex;
+        if (trackIndex) {
+          indexSignal = createIntSignal(index);
+        }
+        int ownerId = pushRoot();
+        holder.built = createRow(item, indexSignal);
+        popRoot();
+        nextTable.put(key, new KeyedRow(item, key, holder.built, indexSignal, ownerId));
+        fragment.appendChild(holder.built);
+      }
+      parent.insertBefore(fragment, marker.nextSibling);
+      holder.current = nextTable;
+      return;
+    }
     int reused = 0;
     for (int index = 0; index < nextItems.length; index++) {
       T item = nextItems[index];
@@ -744,27 +778,29 @@ void keyedEachTracked<T>(
         reused += 1;
       } else {
         Signal<int> indexSignal = unusedIndex;
-        int ownerId = runRoot(() => {
-          if (trackIndex) {
-            indexSignal = createIntSignal(index);
-          }
-          holder.built = createRow(item, indexSignal);
-        });
+        if (trackIndex) {
+          indexSignal = createIntSignal(index);
+        }
+        int ownerId = pushRoot();
+        holder.built = createRow(item, indexSignal);
+        popRoot();
         nextTable.put(key, new KeyedRow(item, key, holder.built, indexSignal, ownerId));
       }
+    }
+    if (reused == 0) {
+      wipeAfterMarker(marker);
+      previous.dropAll();
+      Element fragment = document.createDocumentFragment();
+      for (int index = 0; index < nextTable.order.length; index++) {
+        fragment.appendChild(nextTable.order[index].node);
+      }
+      parent.insertBefore(fragment, marker.nextSibling);
+      holder.current = nextTable;
+      return;
     }
     Element[] nextNodes = [];
     for (int index = 0; index < nextTable.order.length; index++) {
       nextNodes.push(nextTable.order[index].node);
-    }
-    if (reused == 0) {
-      if (previous.order.length > 0) {
-        wipeAfterMarker(marker);
-        previous.dropAll();
-      }
-      appendNodes(parent, marker, nextNodes);
-      holder.current = nextTable;
-      return;
     }
     if (
       reused == previous.order.length &&

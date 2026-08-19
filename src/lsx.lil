@@ -16,8 +16,13 @@ import {
   Math,
   document
 } from "./host";
+import extern { domFirstChild, domNextSibling, domSetText } from "./dom-host.js";
+extern Element domFirstChild(Element node);
+extern Element domNextSibling(Element node);
+extern void domSetText(Element node, string value);
 import {
   append,
+  bindTextData,
   cloneTemplate,
   comment,
   element,
@@ -53,9 +58,13 @@ export {
   Element,
   Math,
   append,
+  bindTextData,
   cloneTemplate,
   createRenderEffect,
   delay,
+  domFirstChild,
+  domNextSibling,
+  domSetText,
   element,
   every,
   firstChild,
@@ -132,7 +141,7 @@ export void stringProperty(Element node, string name, string value) {
     return;
   }
   if (name == "textContent") {
-    setText(node, value);
+    node.textContent = value;
     return;
   }
   node.setAttribute(name, value);

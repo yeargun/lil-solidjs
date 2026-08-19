@@ -103,7 +103,7 @@ function tryLowerTemplate(node, context, parentVariable, namespace) {
   const root = context.id("el");
   plan.variable = root;
   assignWalkNeeds(plan);
-  const code = [`Element ${root} = cloneTemplate(${template});`];
+  const code = [`Element ${root} = ${template}.cloneNode(true);`];
   emitTemplateWalk(plan, context, code);
   emitTemplateHoles(plan, context, code);
   if (parentVariable) code.push(`append(${parentVariable}, ${root});`);
@@ -171,6 +171,13 @@ function planHostTemplate(node, namespace) {
       });
       continue;
     }
+    if (property.name === "textContent" && property.type === "expr") {
+      holes.push({
+        type: "textContentChild",
+        expression: property.value.trim(),
+      });
+      continue;
+    }
     holes.push({ type: "dynamic", property });
   }
 
@@ -185,6 +192,21 @@ function planHostTemplate(node, namespace) {
   };
 
   if (VOID.has(node.tag)) return plan;
+
+  const textContentHole = holes.find((hole) => hole.type === "textContentChild");
+  if (textContentHole) {
+    holes.splice(holes.indexOf(textContentHole), 1);
+    plan.children.push(
+      textPlan(" ", [
+        {
+          type: "textData",
+          expression: textContentHole.expression,
+          reactive: hasCallExpression(textContentHole.expression),
+        },
+      ]),
+    );
+    return validateTemplatePlan(plan);
+  }
 
   const childNamespace = childNamespaceFor(node.tag, namespace);
   const only = singleExpressionChild(node.children);
@@ -332,10 +354,11 @@ function emitTemplateWalk(plan, context, code) {
     if (!child.walk) continue;
     const variable = context.id(child.kind === "element" ? "el" : "node");
     child.variable = variable;
+    const from = previous ?? plan.variable;
     code.push(
       previous
-        ? `Element ${variable} = nextSibling(${previous});`
-        : `Element ${variable} = firstChild(${plan.variable});`,
+        ? `Element ${variable} = domNextSibling(${from});`
+        : `Element ${variable} = domFirstChild(${from});`,
     );
     previous = variable;
     emitTemplateWalk(child, context, code);
@@ -360,21 +383,33 @@ function emitTemplateHoles(plan, context, code) {
         for (const update of lowerDynamicUpdate(variable, hole.property)) {
           emitBoundUpdate(code, hole.property, update);
         }
+      } else if (hole.type === "textData") {
+        const write = `domSetText(${variable}, "" + (${hole.expression}));`;
+        if (hole.reactive) {
+          const signal = hole.expression.replace(/\s*\.read\(\)\s*$/, "");
+          if (signal !== hole.expression) {
+            code.push(`bindTextData(${variable}, ${signal});`);
+          } else {
+            code.push(`createRenderEffect(() => { ${write} });`);
+          }
+        } else {
+          code.push(write);
+        }
       } else if (hole.type === "textContent") {
-        code.push(
-          `stringProperty(${variable}, "textContent", "" + (${hole.expression}));`,
-        );
+        code.push(`${variable}.textContent = "" + (${hole.expression});`);
       } else if (hole.type === "setText") {
-        code.push(`setText(${variable}, "" + (${hole.expression}));`);
+        code.push(`domSetText(${variable}, "" + (${hole.expression}));`);
       } else if (hole.type === "dynamicText") {
         code.push(
-          `dynamicTextNode(${variable}, () => "" + (${hole.expression}));`,
+          `createRenderEffect(() => { domSetText(${variable}, "" + (${hole.expression})); });`,
         );
       }
     }
   }
   if (plan.kind === "element") {
-    for (const child of plan.children) emitTemplateHoles(child, context, code);
+    for (const child of plan.children) {
+      emitTemplateHoles(child, context, code);
+    }
     for (const insert of plan.inserts) {
       code.push(
         ...lowerBuiltinChild(insert, context, plan.variable, plan.namespace)
@@ -1323,9 +1358,12 @@ function lowerDynamicUpdate(variable, property) {
   if (property.name === "checked") {
     return [`boolProperty(${variable}, "checked", ${property.value.trim()});`];
   }
-  if (property.name === "value" || property.name === "textContent") {
+  if (property.name === "textContent") {
+    return [`${variable}.textContent = "" + (${property.value.trim()});`];
+  }
+  if (property.name === "value") {
     return [
-      `stringProperty(${variable}, "${property.name}", "" + (${property.value.trim()}));`,
+      `stringProperty(${variable}, "value", "" + (${property.value.trim()}));`,
     ];
   }
   if (BOOLEAN_ATTRIBUTES.has(property.name)) {

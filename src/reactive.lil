@@ -10,6 +10,8 @@ export extern ObjectCtor Object;
 
 void noop() {}
 
+int[] emptyIds = [];
+
 class Cleanup {
   func()->void callback;
 
@@ -29,15 +31,25 @@ class Unsub {
   int sourceId;
   int generation;
   int slot;
+  int effectId;
+  int[] ids;
 
   init(func()->void callback, int sourceId, int generation) {
     this.callback = callback;
     this.sourceId = sourceId;
     this.generation = generation;
     this.slot = -1;
+    this.effectId = -1;
+    this.ids = emptyIds;
   }
 
   void run() {
+    int slot = this.slot;
+    if (slot >= 0) {
+      this.slot = -1;
+      detachObserver(this.ids, this.effectId, slot, this.sourceId);
+      return;
+    }
     func()->void callback = this.callback;
     this.callback = noop;
     callback();
@@ -58,9 +70,18 @@ class PendingWrite {
   }
 }
 
-int[] emptyIds = [];
 Cleanup[] emptyCleanups = [];
 Unsub[] emptyUnsubs = [];
+
+class Watcher {
+  func()->void apply;
+
+  init(func()->void apply) {
+    this.apply = apply;
+  }
+}
+
+Watcher[] emptyWatchers = [];
 
 PendingWrite[] pendingWrites = [];
 
@@ -167,6 +188,7 @@ export class Signal<T> {
   bool asyncPending;
   func(T, T)->bool equals;
   int[] observerIds;
+  Watcher[] watchers;
 
   init(T initial, func(T, T)->bool equals) {
     this.id = nextSourceId;
@@ -177,6 +199,23 @@ export class Signal<T> {
     this.asyncPending = false;
     this.equals = equals;
     this.observerIds = [];
+    this.watchers = emptyWatchers;
+  }
+
+  void watch(func()->void apply) {
+    Watcher[] watchers = this.watchers;
+    if (watchers == emptyWatchers) {
+      watchers = [];
+      this.watchers = watchers;
+    }
+    watchers.push(new Watcher(apply));
+  }
+
+  void notifyWatchers() {
+    Watcher[] watchers = this.watchers;
+    for (int index = 0; index < watchers.length; index++) {
+      watchers[index].apply();
+    }
   }
 
   void subscribe(int effectId) {
@@ -189,10 +228,10 @@ export class Signal<T> {
         return;
       }
     }
-    Signal<T> signal = this;
     Unsub unsub = new Unsub(noop, this.id, gen);
+    unsub.ids = this.observerIds;
+    unsub.effectId = effectId;
     unsub.slot = this.observerIds.length;
-    unsub.callback = () => signal.unsubscribeAt(effectId, unsub.slot);
     this.observerIds.push(effectId);
     unsubs = ownUnsubs(unsubs);
     effect.unsubs = unsubs;
@@ -200,34 +239,10 @@ export class Signal<T> {
   }
 
   void unsubscribe(int effectId) {
-    for (int index = 0; index < this.observerIds.length; index++) {
-      if (this.observerIds[index] == effectId) {
-        this.unsubscribeAt(effectId, index);
-        return;
-      }
-    }
-  }
-
-  void unsubscribeAt(int effectId, int slot) {
     int[] ids = this.observerIds;
-    if (slot < 0 || slot >= ids.length) {
-      return;
-    }
-    if (ids[slot] != effectId) {
-      return;
-    }
-    int last = ids.length - 1;
-    int moved = ids[last];
-    ids[slot] = moved;
-    ids.pop();
-    if (slot == last) {
-      return;
-    }
-    int sourceId = this.id;
-    Unsub[] unsubs = effects[moved].unsubs;
-    for (int cursor = 0; cursor < unsubs.length; cursor++) {
-      if (unsubs[cursor].sourceId == sourceId) {
-        unsubs[cursor].slot = slot;
+    for (int index = 0; index < ids.length; index++) {
+      if (ids[index] == effectId) {
+        detachObserver(ids, effectId, index, this.id);
         return;
       }
     }
@@ -278,6 +293,7 @@ export class Signal<T> {
     }
     this.committed = this.pending;
     notifyObservers(this.observerIds);
+    this.notifyWatchers();
   }
 
   T update(func(T)->T updater) {
@@ -297,6 +313,7 @@ export class Signal<T> {
     this.committed = next;
     this.pending = next;
     notifyObservers(this.observerIds);
+    this.notifyWatchers();
   }
 }
 
@@ -315,6 +332,29 @@ void subscribeAncestorEffects<T>(Signal<T> signal) {
       break;
     }
     current = parent.parentId;
+  }
+}
+
+void detachObserver(int[] ids, int effectId, int slot, int sourceId) {
+  if (slot < 0 || slot >= ids.length) {
+    return;
+  }
+  if (ids[slot] != effectId) {
+    return;
+  }
+  int last = ids.length - 1;
+  int moved = ids[last];
+  ids[slot] = moved;
+  ids.pop();
+  if (slot == last) {
+    return;
+  }
+  Unsub[] unsubs = effects[moved].unsubs;
+  for (int cursor = 0; cursor < unsubs.length; cursor++) {
+    if (unsubs[cursor].sourceId == sourceId) {
+      unsubs[cursor].slot = slot;
+      return;
+    }
   }
 }
 
@@ -502,7 +542,9 @@ void runEffect(int effectId) {
     activeEffectId = previousEffect;
     activeOwnerId = previousOwner;
   }
-  sweepUnsubs(effect);
+  if (effect.generation > 1) {
+    sweepUnsubs(effect);
+  }
 }
 
 void drainQueue(int[] queue) {
@@ -849,21 +891,35 @@ export T createRoot<T>(func(func()->void)->T callback) {
 }
 
 export int runRoot(func()->void body) {
-  int previousOwner = activeOwnerId;
-  int previousEffect = activeEffectId;
-  int previousListener = activeListenerId;
+  int ownerId = pushRoot();
+  body();
+  popRoot();
+  return ownerId;
+}
+
+int[] rootStack = [];
+
+export int pushRoot() {
+  rootStack.push(activeOwnerId);
+  rootStack.push(activeEffectId);
+  rootStack.push(activeListenerId);
   int ownerId = allocOwner(0, -1);
   activeOwnerId = ownerId;
   activeEffectId = -1;
   activeListenerId = -1;
-  try {
-    body();
-    return ownerId;
-  } finally {
-    activeOwnerId = previousOwner;
-    activeEffectId = previousEffect;
-    activeListenerId = previousListener;
-  }
+  return ownerId;
+}
+
+export void popRoot() {
+  int listenerId = rootStack[rootStack.length - 1];
+  rootStack.pop();
+  int effectId = rootStack[rootStack.length - 1];
+  rootStack.pop();
+  int ownerId = rootStack[rootStack.length - 1];
+  rootStack.pop();
+  activeListenerId = listenerId;
+  activeEffectId = effectId;
+  activeOwnerId = ownerId;
 }
 
 export void disposeRoot(int ownerId) {

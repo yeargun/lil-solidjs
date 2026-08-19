@@ -17,6 +17,7 @@ export extern class Element {
   string id;
   string className;
   string textContent;
+  string data;
   string innerHTML;
   string value;
   bool checked;

@@ -2,13 +2,13 @@
 
 Solid 2.0’s client runtime, compiled with LilScript and published as `@itslil/solidjs`. Source: [github.com/yeargun/lil-solidjs](https://github.com/yeargun/lil-solidjs).
 
-**Official [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) keyed table: 66.1% smaller Brotli (11,180 B → 3,793 B)** and **0.94×** CPU across all nine same-app workloads. That is one Vite + terser app — Solid’s client plus the jumbotron — not a reconstructed `export *` vendor. Live apps, raw / gzip-9 / Brotli-11 sizes, and measured performance are on the **[solidlil demo lab](https://yeargun.github.io/solidlil/)**. The paired browser demos are closed-world LSX extras, not the typical ship.
+**Official [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) keyed table: 65.5% smaller Brotli (11,180 B → 3,862 B)** and **0.94×** CPU across all nine same-app workloads. That is one Vite + terser app — Solid’s client plus the jumbotron — not a reconstructed `export *` vendor. Live apps, raw / gzip-9 / Brotli-11 sizes, and measured performance are on the **[solidlil demo lab](https://yeargun.github.io/solidlil/)**. The paired browser demos are closed-world LSX extras, not the typical ship.
 
 | Reproducible result | Solid 2.0 | `@itslil/solidjs` | Ratio | Reduction |
 | --- | ---: | ---: | ---: | ---: |
-| [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) keyed table, JS Brotli-11 | 11,180 B | 3,793 B | 0.339× | **66.1%** |
-| Same keyed table, gzip-9 | 12,318 B | 4,308 B | 0.350× | **65.0%** |
-| Same keyed table, raw JS | 32,159 B | 10,445 B | 0.325× | **67.5%** |
+| [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) keyed table, JS Brotli-11 | 11,180 B | 3,862 B | 0.345× | **65.5%** |
+| Same keyed table, gzip-9 | 12,318 B | 4,343 B | 0.353× | **64.7%** |
+| Same keyed table, raw JS | 32,159 B | 10,929 B | 0.340× | **66.0%** |
 
 The size that matters is the official keyed app: one vendor chunk plus that table, Solid JSX versus LSX, both `cloneNode` templates, then terser. A named-import `solid-js` bundle without the app is already ~10 kB Brotli; `export *` is ~35 kB because it keeps unused `@solidjs/signals` modules. Neither is a substitute for the JFB payload. Closed-world demo totals count Solid’s client once per file and let LilScript delete unused runtime; they overstate the gap.
 
@@ -16,17 +16,17 @@ Official [js-framework-benchmark](https://github.com/krausest/js-framework-bench
 
 | Keyed workload | Solid 2.0 | @itslil/solidjs | Ratio |
 | --- | ---: | ---: | ---: |
-| Create 1,000 rows | 25.5 ms | 26.1 ms | 1.02× |
-| Replace 1,000 rows | 28.4 ms | 27.9 ms | **0.98×** |
-| Update every 10th ×16 | 20.4 ms | 19.2 ms | **0.94×** |
-| Select a row | 10.4 ms | 6.7 ms | **0.64×** |
-| Swap two rows | 21.1 ms | 20.3 ms | **0.96×** |
-| Remove one row | 14.2 ms | 14.7 ms | 1.04× |
-| Create 10,000 rows | 278.3 ms | 285.7 ms | 1.03× |
-| Append 1,000 ×2 | 29.4 ms | 29.6 ms | 1.01× |
-| Clear 1,000 ×8 | 12.3 ms | 11.7 ms | **0.95×** |
-| JS Brotli-11 | 11,180 B | 3,793 B | **0.34×** |
-| JS raw | 32,159 B | 10,445 B | **0.32×** |
+| Create 1,000 rows | 26.5 ms | 26.0 ms | **0.98×** |
+| Replace 1,000 rows | 30.6 ms | 28.9 ms | **0.95×** |
+| Update every 10th ×16 | 20.9 ms | 19.6 ms | **0.94×** |
+| Select a row | 10.3 ms | 7.9 ms | **0.76×** |
+| Swap two rows | 21.9 ms | 22.7 ms | 1.03× |
+| Remove one row | 15.4 ms | 14.4 ms | **0.93×** |
+| Create 10,000 rows | 288.1 ms | 286.0 ms | **0.99×** |
+| Append 1,000 ×2 | 32.1 ms | 31.7 ms | **0.99×** |
+| Clear 1,000 ×8 | 12.9 ms | 12.1 ms | **0.94×** |
+| JS Brotli-11 | 11,180 B | 3,862 B | **0.35×** |
+| JS raw | 32,159 B | 10,929 B | **0.34×** |
 | Ready memory | 1.16 MB | 1.07 MB | **0.92×** |
 | Memory with 1,000 rows | 3.18 MB | 4.07 MB | 1.28× |
 | Memory after five create/clear cycles | 1.47 MB | 2.18 MB | 1.49× |
@@ -92,7 +92,7 @@ The JFB cut is not “Vite property-mangled Solid harder,” and it is not a thi
 
 ## What “smaller” means
 
-A normal client app vendors the framework once, then adds modules. The number on this page is that model: official js-framework-benchmark. Official keyed Solid **1.9** is 11,563 B raw; Solid **2.0** is 32,159 B raw / 11,180 B Brotli-11; `@itslil/solidjs` LSX is 10,445 B raw / 3,793 B Brotli-11.
+A normal client app vendors the framework once, then adds modules. The number on this page is that model: official js-framework-benchmark. Official keyed Solid **1.9** is 11,563 B raw; Solid **2.0** is 32,159 B raw / 11,180 B Brotli-11; `@itslil/solidjs` LSX is 10,929 B raw / 3,862 B Brotli-11.
 
 The lab demos are closed-world LSX builds of the same UI. They are not how a typical Solid or React app is shipped. Use the js-framework-benchmark keyed row.
 

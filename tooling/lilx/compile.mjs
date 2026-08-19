@@ -8,6 +8,7 @@ const DOM_IMPORTS = [
   "appendComponentChildren",
   "attribute",
   "boolAttribute",
+  "bindTextData",
   "boolProperty",
   "childNodes",
   "classToggle",
@@ -20,6 +21,9 @@ const DOM_IMPORTS = [
   "componentSpread",
   "createRenderEffect",
   "delay",
+  "domFirstChild",
+  "domNextSibling",
+  "domSetText",
   "dynamicErrored",
   "dynamicForNodes",
   "dynamicForValue",
@@ -193,7 +197,7 @@ function namedImport(names, specifier) {
 function loweredExpression(lowered) {
   if (lowered.code.length === 1) {
     const match = lowered.code[0].match(
-      /^Element \w+ = (cloneTemplate\(_tmpl\d+\));$/,
+      /^Element \w+ = ((_tmpl\d+)\.cloneNode\(true\));$/,
     );
     if (match && lowered.code[0].includes(` ${lowered.varName} = `)) {
       return match[1];
