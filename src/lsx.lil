@@ -155,9 +155,7 @@ export void boolProperty(Element node, string name, bool value) {
 }
 
 export void classToggle(Element node, string name, bool value) {
-  if (node.classList.contains(name) != value) {
-    node.classList.toggle(name, value);
-  }
+  node.classList.toggle(name, value);
 }
 
 export void dynamicText(Element parent, func()->string value) {
@@ -582,8 +580,6 @@ export void onEvent(Element node, string event, func()->void callback) {
 
 bool clickDelegateBound = false;
 
-void emptyClick() {}
-
 void clickDelegate(DomPointerEvent event) {
   Element? node = event.target;
   while (node != null) {
@@ -617,10 +613,6 @@ export void onDelegatedClickVoid(Element node, func()->void callback) {
   ensureClickDelegate();
   node.hasClickAction = true;
   node.clickAction = callback;
-  onCleanup(() => {
-    node.hasClickAction = false;
-    node.clickAction = emptyClick;
-  });
 }
 
 export class DomEvent {

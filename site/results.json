@@ -519,8 +519,8 @@
     "blocks": 15,
     "cpuThrottling": true,
     "geomean": {
-      "cpu": 1.043189600554008,
-      "cpuSameApp": 1.043189600554008
+      "cpu": 0.9437692768211556,
+      "cpuSameApp": 0.9437692768211556
     },
     "notes": {
       "cpuSameApp": "Geometric mean of all nine keyed workloads. Both sides read selected() on every row — same algorithm as official Solid 2.0.",
@@ -534,74 +534,74 @@
         "brotli": 11180
       },
       "solidlil": {
-        "raw": 9814,
-        "gzip": 4059,
-        "brotli": 3606
+        "raw": 10445,
+        "gzip": 4308,
+        "brotli": 3793
       }
     },
     "cpu": [
       {
         "id": "01_run1k",
         "name": "Create 1,000 rows",
-        "solid": 25.532,
-        "solidlil": 26.334,
-        "ratio": 1.03141156196146
+        "solid": 25.515,
+        "solidlil": 26.139,
+        "ratio": 1.02445620223398
       },
       {
         "id": "02_replace1k",
         "name": "Replace 1,000 rows",
-        "solid": 29.08,
-        "solidlil": 31.696,
-        "ratio": 1.0899587345254471
+        "solid": 28.39,
+        "solidlil": 27.949,
+        "ratio": 0.9844663613948574
       },
       {
         "id": "03_update10th1k_x16",
         "name": "Update every 10th row ×16",
-        "solid": 19.17,
-        "solidlil": 18.401,
-        "ratio": 0.959885237350026
+        "solid": 20.37,
+        "solidlil": 19.187,
+        "ratio": 0.9419243986254295
       },
       {
         "id": "04_select1k",
         "name": "Select a row",
-        "solid": 9.071,
-        "solidlil": 8.927,
-        "ratio": 0.984125234263036
+        "solid": 10.396,
+        "solidlil": 6.665,
+        "ratio": 0.6411119661408233
       },
       {
         "id": "05_swap1k",
         "name": "Swap two rows",
-        "solid": 21.035,
-        "solidlil": 21.191,
-        "ratio": 1.0074162110767768
+        "solid": 21.095,
+        "solidlil": 20.28,
+        "ratio": 0.9613652524294858
       },
       {
         "id": "06_remove-one-1k",
         "name": "Remove one row",
-        "solid": 15.279,
-        "solidlil": 15.384,
-        "ratio": 1.0068721774985274
+        "solid": 14.197,
+        "solidlil": 14.719,
+        "ratio": 1.0367683313376066
       },
       {
         "id": "07_create10k",
         "name": "Create 10,000 rows",
-        "solid": 288.171,
-        "solidlil": 326.923,
-        "ratio": 1.1344757106023855
+        "solid": 278.324,
+        "solidlil": 285.7,
+        "ratio": 1.0265014874750291
       },
       {
         "id": "08_create1k-after1k_x2",
         "name": "Append 1,000 rows ×2",
-        "solid": 30.453,
-        "solidlil": 33.1,
-        "ratio": 1.0869208288181789
+        "solid": 29.358,
+        "solidlil": 29.577,
+        "ratio": 1.007459636215001
       },
       {
         "id": "09_clear1k_x8",
         "name": "Clear 1,000 rows ×8",
-        "solid": 13.41,
-        "solidlil": 14.771,
-        "ratio": 1.1014914243102163
+        "solid": 12.346,
+        "solidlil": 11.682,
+        "ratio": 0.946217398347643
       }
     ],
     "memory": [

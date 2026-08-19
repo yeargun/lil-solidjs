@@ -358,7 +358,7 @@ function emitTemplateHoles(plan, context, code) {
         code.push(lowerStaticAttribute(variable, hole.property));
       } else if (hole.type === "dynamic") {
         for (const update of lowerDynamicUpdate(variable, hole.property)) {
-          code.push(`createRenderEffect(() => { ${update} });`);
+          emitBoundUpdate(code, hole.property, update);
         }
       } else if (hole.type === "textContent") {
         code.push(
@@ -420,12 +420,12 @@ function lowerElementBody(
     } else if (property.type === "bool") {
       code.push(lowerStaticAttribute(variable, { ...property, value: "" }));
     } else {
-      updates.push(lowerDynamicUpdate(variable, property));
+      updates.push([property, lowerDynamicUpdate(variable, property)]);
     }
   }
-  for (const propertyUpdates of updates) {
+  for (const [property, propertyUpdates] of updates) {
     for (const update of propertyUpdates) {
-      code.push(`createRenderEffect(() => { ${update} });`);
+      emitBoundUpdate(code, property, update);
     }
   }
 
@@ -902,6 +902,14 @@ function lowerNodeArray(children, context, namespace, label) {
 
 function hasCallExpression(expression) {
   return /[A-Za-z_$][A-Za-z0-9_$]*\s*\(/.test(expression);
+}
+
+function emitBoundUpdate(code, property, update) {
+  if (property.type === "expr" && hasCallExpression(property.value)) {
+    code.push(`createRenderEffect(() => { ${update} });`);
+    return;
+  }
+  code.push(update);
 }
 
 function lowerBuiltinNodeGroup(node, context, namespace) {

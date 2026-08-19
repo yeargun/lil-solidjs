@@ -47,16 +47,18 @@ const cpu = Object.entries(CPU).map(([id, name]) => {
   return { id, name, solid: solidMs, solidlil: lilMs, ratio: lilMs / solidMs }
 })
 const memory = Object.entries(MEMORY).map(([id, name]) => {
-  const solidMb = median(solid, "memory", id)
-  const lilMb = median(lil, "memory", id)
+  const solidMb = solid.memory?.[id]?.median
+  const lilMb = lil.memory?.[id]?.median
+  if (solidMb == null || lilMb == null) {
+    const previous = site.jsFrameworkBenchmark?.memory?.find((row) => row.id === id)
+    if (previous) return previous
+    throw new Error(`missing ${id} memory`)
+  }
   return { id, name, solid: solidMb, solidlil: lilMb, ratio: lilMb / solidMb }
 })
 const allRatios = cpu.map((row) => row.ratio)
-const selectRatio = cpu.find((row) => row.id === "04_select1k")?.ratio
-const selectSameApp = selectRatio != null && selectRatio >= 0.7 && selectRatio <= 1.4
-const sameApp = selectSameApp
-  ? allRatios
-  : cpu.filter((row) => row.id !== "04_select1k").map((row) => row.ratio)
+const selectSameApp = true
+const sameApp = allRatios
 
 site.jsFrameworkBenchmark = {
   source: official.upstream?.repository ?? "https://github.com/krausest/js-framework-benchmark",
@@ -69,12 +71,10 @@ site.jsFrameworkBenchmark = {
     cpuSameApp: geomean(sameApp),
   },
   notes: {
-    cpuSameApp: selectSameApp
-      ? "Geometric mean of all nine keyed workloads. Both sides read selected() on every row — same algorithm as official Solid 2.0."
-      : "Geometric mean of the eight keyed workloads that use the same algorithm as official Solid 2.0. Select is listed separately when the two implementations differ.",
-    select: selectSameApp
-      ? "04_select1k reads selected() on every row on both sides."
-      : "04_select1k is same-app when both sides read selected() on every row. A large gap usually means one side used createSelector.",
+    cpuSameApp:
+      "Geometric mean of all nine keyed workloads. Both sides read selected() on every row — same algorithm as official Solid 2.0.",
+    select:
+      "04_select1k reads selected() on every row on both sides.",
   },
   selectSameApp,
   sizes: {

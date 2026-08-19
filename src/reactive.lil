@@ -28,11 +28,13 @@ class Unsub {
   func()->void callback;
   int sourceId;
   int generation;
+  int slot;
 
   init(func()->void callback, int sourceId, int generation) {
     this.callback = callback;
     this.sourceId = sourceId;
     this.generation = generation;
+    this.slot = -1;
   }
 
   void run() {
@@ -55,6 +57,10 @@ class PendingWrite {
     apply();
   }
 }
+
+int[] emptyIds = [];
+Cleanup[] emptyCleanups = [];
+Unsub[] emptyUnsubs = [];
 
 PendingWrite[] pendingWrites = [];
 
@@ -82,9 +88,9 @@ export class Owner {
     this.id = id;
     this.parentKind = parentKind;
     this.parentId = parentId;
-    this.childOwnerIds = [];
-    this.childEffectIds = [];
-    this.cleanups = [];
+    this.childOwnerIds = emptyIds;
+    this.childEffectIds = emptyIds;
+    this.cleanups = emptyCleanups;
     this.disposed = false;
   }
 }
@@ -116,10 +122,10 @@ export class Effect {
     this.parentKind = parentKind;
     this.parentId = parentId;
     this.callback = callback;
-    this.unsubs = [];
-    this.childOwnerIds = [];
-    this.childEffectIds = [];
-    this.cleanups = [];
+    this.unsubs = emptyUnsubs;
+    this.childOwnerIds = emptyIds;
+    this.childEffectIds = emptyIds;
+    this.cleanups = emptyCleanups;
     this.disposed = false;
     this.queued = false;
     this.kind = kind;
@@ -131,6 +137,27 @@ Owner[] owners = [];
 int[] freeOwnerIds = [];
 Effect[] effects = [];
 int[] freeEffectIds = [];
+
+int[] ownIds(int[] ids) {
+  if (ids == emptyIds) {
+    return [];
+  }
+  return ids;
+}
+
+Cleanup[] ownCleanups(Cleanup[] cleanups) {
+  if (cleanups == emptyCleanups) {
+    return [];
+  }
+  return cleanups;
+}
+
+Unsub[] ownUnsubs(Unsub[] unsubs) {
+  if (unsubs == emptyUnsubs) {
+    return [];
+  }
+  return unsubs;
+}
 
 export class Signal<T> {
   int id;
@@ -155,28 +182,52 @@ export class Signal<T> {
   void subscribe(int effectId) {
     Effect effect = effects[effectId];
     int gen = effect.generation;
-    for (int index = 0; index < this.observerIds.length; index++) {
-      if (this.observerIds[index] == effectId) {
-        Unsub[] unsubs = effect.unsubs;
-        for (int cursor = 0; cursor < unsubs.length; cursor++) {
-          if (unsubs[cursor].sourceId == this.id) {
-            unsubs[cursor].generation = gen;
-            return;
-          }
-        }
+    Unsub[] unsubs = effect.unsubs;
+    for (int cursor = 0; cursor < unsubs.length; cursor++) {
+      if (unsubs[cursor].sourceId == this.id) {
+        unsubs[cursor].generation = gen;
         return;
       }
     }
+    Signal<T> signal = this;
+    Unsub unsub = new Unsub(noop, this.id, gen);
+    unsub.slot = this.observerIds.length;
+    unsub.callback = () => signal.unsubscribeAt(effectId, unsub.slot);
     this.observerIds.push(effectId);
-    effect.unsubs.push(new Unsub(() => this.unsubscribe(effectId), this.id, gen));
+    unsubs = ownUnsubs(unsubs);
+    effect.unsubs = unsubs;
+    unsubs.push(unsub);
   }
 
   void unsubscribe(int effectId) {
     for (int index = 0; index < this.observerIds.length; index++) {
       if (this.observerIds[index] == effectId) {
-        int last = this.observerIds.length - 1;
-        this.observerIds[index] = this.observerIds[last];
-        this.observerIds.pop();
+        this.unsubscribeAt(effectId, index);
+        return;
+      }
+    }
+  }
+
+  void unsubscribeAt(int effectId, int slot) {
+    int[] ids = this.observerIds;
+    if (slot < 0 || slot >= ids.length) {
+      return;
+    }
+    if (ids[slot] != effectId) {
+      return;
+    }
+    int last = ids.length - 1;
+    int moved = ids[last];
+    ids[slot] = moved;
+    ids.pop();
+    if (slot == last) {
+      return;
+    }
+    int sourceId = this.id;
+    Unsub[] unsubs = effects[moved].unsubs;
+    for (int cursor = 0; cursor < unsubs.length; cursor++) {
+      if (unsubs[cursor].sourceId == sourceId) {
+        unsubs[cursor].slot = slot;
         return;
       }
     }
@@ -351,6 +402,9 @@ void disposeOwner(int ownerId) {
     disposeOwner(child);
   }
   runCleanups(owner.cleanups);
+  owner.childOwnerIds = emptyIds;
+  owner.childEffectIds = emptyIds;
+  owner.cleanups = emptyCleanups;
   freeOwnerIds.push(ownerId);
 }
 
@@ -379,21 +433,29 @@ void disposeEffect(int effectId) {
     disposeOwner(child);
   }
   runCleanups(effect.cleanups);
+  effect.unsubs = emptyUnsubs;
+  effect.childOwnerIds = emptyIds;
+  effect.childEffectIds = emptyIds;
+  effect.cleanups = emptyCleanups;
   freeEffectIds.push(effectId);
 }
 
 void sweepUnsubs(Effect effect) {
   int gen = effect.generation;
-  Unsub[] live = [];
-  for (int index = 0; index < effect.unsubs.length; index++) {
-    Unsub unsub = effect.unsubs[index];
+  Unsub[] unsubs = effect.unsubs;
+  int write = 0;
+  for (int index = 0; index < unsubs.length; index++) {
+    Unsub unsub = unsubs[index];
     if (unsub.generation == gen) {
-      live.push(unsub);
+      unsubs[write] = unsub;
+      write += 1;
     } else {
       unsub.run();
     }
   }
-  effect.unsubs = live;
+  while (unsubs.length > write) {
+    unsubs.pop();
+  }
 }
 
 void resetEffect(int effectId) {
@@ -422,7 +484,9 @@ void runEffect(int effectId) {
   if (effect.disposed) {
     return;
   }
-  resetEffect(effectId);
+  if (effect.generation > 0) {
+    resetEffect(effectId);
+  }
   effect.generation += 1;
   int previousListener = activeListenerId;
   int previousEffect = activeEffectId;
@@ -494,15 +558,22 @@ int allocOwner(int parentKind, int parentId) {
     owner.id = id;
     owner.parentKind = parentKind;
     owner.parentId = parentId;
+    owner.childOwnerIds = emptyIds;
+    owner.childEffectIds = emptyIds;
+    owner.cleanups = emptyCleanups;
     owner.disposed = false;
   } else {
     id = owners.length;
     owners.push(new Owner(id, parentKind, parentId));
   }
   if (parentKind == 0 && parentId >= 0) {
-    owners[parentId].childOwnerIds.push(id);
+    Owner parent = owners[parentId];
+    parent.childOwnerIds = ownIds(parent.childOwnerIds);
+    parent.childOwnerIds.push(id);
   } else if (parentKind == 1 && parentId >= 0) {
-    effects[parentId].childOwnerIds.push(id);
+    Effect parent = effects[parentId];
+    parent.childOwnerIds = ownIds(parent.childOwnerIds);
+    parent.childOwnerIds.push(id);
   }
   return id;
 }
@@ -524,6 +595,10 @@ int allocEffect(func()->void callback, int kind) {
     effect.parentId = parentId;
     effect.callback = callback;
     effect.kind = kind;
+    effect.unsubs = emptyUnsubs;
+    effect.childOwnerIds = emptyIds;
+    effect.childEffectIds = emptyIds;
+    effect.cleanups = emptyCleanups;
     effect.disposed = false;
     effect.queued = false;
     effect.generation = 0;
@@ -532,9 +607,13 @@ int allocEffect(func()->void callback, int kind) {
     effects.push(new Effect(id, parentKind, parentId, callback, kind));
   }
   if (parentKind == 0 && parentId >= 0) {
-    owners[parentId].childEffectIds.push(id);
+    Owner parent = owners[parentId];
+    parent.childEffectIds = ownIds(parent.childEffectIds);
+    parent.childEffectIds.push(id);
   } else if (parentKind == 1 && parentId >= 0) {
-    effects[parentId].childEffectIds.push(id);
+    Effect parent = effects[parentId];
+    parent.childEffectIds = ownIds(parent.childEffectIds);
+    parent.childEffectIds.push(id);
   }
   return id;
 }
@@ -667,7 +746,9 @@ export class Selector {
       this.watchers.set(value, created);
     }
     Selector selector = this;
-    effect.unsubs.push(new Unsub(() => selector.unwatch(value, effectId), this.id, gen));
+    Unsub[] unsubs = ownUnsubs(effect.unsubs);
+    effect.unsubs = unsubs;
+    unsubs.push(new Unsub(() => selector.unwatch(value, effectId), this.id, gen));
   }
 
   void unwatch(int value, int effectId) {
@@ -767,6 +848,28 @@ export T createRoot<T>(func(func()->void)->T callback) {
   }
 }
 
+export int runRoot(func()->void body) {
+  int previousOwner = activeOwnerId;
+  int previousEffect = activeEffectId;
+  int previousListener = activeListenerId;
+  int ownerId = allocOwner(0, -1);
+  activeOwnerId = ownerId;
+  activeEffectId = -1;
+  activeListenerId = -1;
+  try {
+    body();
+    return ownerId;
+  } finally {
+    activeOwnerId = previousOwner;
+    activeEffectId = previousEffect;
+    activeListenerId = previousListener;
+  }
+}
+
+export void disposeRoot(int ownerId) {
+  disposeOwner(ownerId);
+}
+
 export T untrack<T>(func()->T callback) {
   int previousListener = activeListenerId;
   activeListenerId = -1;
@@ -779,11 +882,15 @@ export T untrack<T>(func()->T callback) {
 
 export void onCleanup(func()->void callback) {
   if (activeEffectId >= 0) {
-    effects[activeEffectId].cleanups.push(new Cleanup(callback));
+    Effect effect = effects[activeEffectId];
+    effect.cleanups = ownCleanups(effect.cleanups);
+    effect.cleanups.push(new Cleanup(callback));
     return;
   }
   if (activeOwnerId >= 0) {
-    owners[activeOwnerId].cleanups.push(new Cleanup(callback));
+    Owner owner = owners[activeOwnerId];
+    owner.cleanups = ownCleanups(owner.cleanups);
+    owner.cleanups.push(new Cleanup(callback));
   }
 }
 

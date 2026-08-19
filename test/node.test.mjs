@@ -94,6 +94,60 @@ test("createStore mutates a draft", () => {
   })
 })
 
+test("fan-out subscribe notifies every observer and forgets recycled slots", () => {
+  const source = core.createIntSignal(0)
+  let hits = 0
+  const dispose = core.createRoot((d) => {
+    for (let i = 0; i < 400; i++) {
+      core.createRenderEffect(() => {
+        core.signalGet(source)
+        hits += 1
+      })
+    }
+    return d
+  })
+  assert.equal(hits, 400)
+  core.signalSet(source, 1)
+  core.flush()
+  assert.equal(hits, 800)
+  dispose()
+  hits = 0
+  const disposeNext = core.createRoot((d) => {
+    for (let i = 0; i < 400; i++) {
+      core.createRenderEffect(() => {
+        hits += 1
+      })
+    }
+    return d
+  })
+  core.signalSet(source, 2)
+  core.flush()
+  assert.equal(hits, 400)
+  disposeNext()
+})
+
+test("dropping a dependency stops updates from that signal", () => {
+  core.createRoot(() => {
+    const left = core.createIntSignal(1)
+    const right = core.createIntSignal(10)
+    const useLeft = core.createIntSignal(1)
+    let seen = 0
+    core.createRenderEffect(() => {
+      seen = core.signalGet(useLeft) == 1 ? core.signalGet(left) : core.signalGet(right)
+    })
+    assert.equal(seen, 1)
+    core.signalSet(useLeft, 0)
+    core.flush()
+    assert.equal(seen, 10)
+    core.signalSet(left, 99)
+    core.flush()
+    assert.equal(seen, 10)
+    core.signalSet(right, 12)
+    core.flush()
+    assert.equal(seen, 12)
+  })
+})
+
 test("disposing a root recycles effect slots", () => {
   const dispose = core.createRoot((d) => {
     for (let i = 0; i < 40; i++) core.createRenderEffect(() => {})

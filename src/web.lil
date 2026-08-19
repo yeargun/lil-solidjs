@@ -10,9 +10,11 @@ import {
   createSelector,
   createSignal,
   createStringSignal,
+  disposeRoot,
   enablePendingThrows,
   flush,
   onCleanup,
+  runRoot,
   provideContext,
   selectorMatch,
   signalGet,
@@ -612,20 +614,23 @@ class KeyedRow<T> {
   int key;
   Element node;
   Signal<int> index;
-  func()->void dispose;
+  int ownerId;
 
-  init(T item, int key, Element node, Signal<int> index, func()->void dispose) {
+  init(T item, int key, Element node, Signal<int> index, int ownerId) {
     this.item = item;
     this.key = key;
     this.node = node;
     this.index = index;
-    this.dispose = dispose;
+    this.ownerId = ownerId;
   }
 
   void drop() {
-    func()->void dispose = this.dispose;
-    this.dispose = emptyDispose;
-    dispose();
+    int ownerId = this.ownerId;
+    if (ownerId < 0) {
+      return;
+    }
+    this.ownerId = -1;
+    disposeRoot(ownerId);
   }
 
   void release() {
@@ -682,9 +687,11 @@ class KeyedTable<T> {
 
 class TableRef<T> {
   KeyedTable<T> current;
+  Element built;
 
   init() {
     this.current = new KeyedTable();
+    this.built = comment();
   }
 }
 
@@ -724,7 +731,10 @@ void keyedEachTracked<T>(
     for (int index = 0; index < nextItems.length; index++) {
       T item = nextItems[index];
       int key = keyOf(item);
-      KeyedRow<T>? matched = previous.take(key);
+      KeyedRow<T>? matched = null;
+      if (previous.order.length > 0) {
+        matched = previous.take(key);
+      }
       if (matched != null) {
         matched.item = item;
         if (trackIndex) {
@@ -733,15 +743,14 @@ void keyedEachTracked<T>(
         nextTable.put(key, matched);
         reused += 1;
       } else {
-        createRoot((func()->void innerDispose) => {
-          Signal<int> indexSignal = unusedIndex;
+        Signal<int> indexSignal = unusedIndex;
+        int ownerId = runRoot(() => {
           if (trackIndex) {
             indexSignal = createIntSignal(index);
           }
-          Element node = createRow(item, indexSignal);
-          nextTable.put(key, new KeyedRow(item, key, node, indexSignal, innerDispose));
-          return innerDispose;
+          holder.built = createRow(item, indexSignal);
         });
+        nextTable.put(key, new KeyedRow(item, key, holder.built, indexSignal, ownerId));
       }
     }
     Element[] nextNodes = [];
