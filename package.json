@@ -1,7 +1,7 @@
 {
-  "name": "solidlil",
+  "name": "@lil/solidjs",
   "version": "0.1.0",
-  "description": "Solid 2.0's client runtime, ported to LilScript and published as a dependency-free package.",
+  "description": "Solid 2.0's client runtime, compiled with LilScript. Same queued writes, split effects, and LSX templates, shipped as a dependency-free package.",
   "keywords": [
     "solid",
     "solidjs",
@@ -10,10 +10,10 @@
     "lilscript"
   ],
   "homepage": "https://yeargun.github.io/solidlil/",
-  "bugs": "https://github.com/yeargun/solidlil/issues",
+  "bugs": "https://github.com/yeargun/solidjs/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yeargun/solidlil.git"
+    "url": "git+https://github.com/yeargun/solidjs.git"
   },
   "license": "MIT",
   "publishConfig": {

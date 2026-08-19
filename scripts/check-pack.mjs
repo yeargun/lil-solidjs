@@ -26,6 +26,6 @@ if ([...files].some((path) => path.startsWith("dist/apps/") || path.startsWith("
   throw new Error("npm tarball must not include apps or source")
 }
 const manifest = JSON.parse(readFileSync("package.json", "utf8"))
-if (manifest.name !== "solidlil") throw new Error("unexpected package name")
+if (manifest.name !== "@lil/solidjs") throw new Error("unexpected package name")
 if (manifest.sideEffects !== false) throw new Error("package must remain tree-shakeable")
 console.log(`npm pack: ${result.entryCount} files, ${result.size} bytes packed, ${result.unpackedSize} bytes unpacked`)

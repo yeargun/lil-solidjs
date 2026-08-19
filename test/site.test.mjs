@@ -51,7 +51,7 @@ test("the README leads with size and performance evidence", async () => {
   const readme = await read("README.md")
   const evidence = readme.indexOf("paired browser demos")
   const jfb = readme.indexOf("js-framework-benchmark")
-  const install = readme.indexOf("npm install solidlil")
+  const install = readme.indexOf("npm install @lil/solidjs")
   assert.ok(jfb > 0 && jfb < evidence && evidence < install)
   assert.match(readme, /raw \/ gzip-9 \/ Brotli-11/)
   assert.match(readme, /https:\/\/yeargun\.github\.io\/solidlil\//)
@@ -67,9 +67,11 @@ test("the generated Pages artifact includes demos, sizes, and performance", asyn
   }
   const html = await read("_site/index.html")
   assert.match(html, /id="performance"/)
+  assert.match(html, /id="perf-cards"/)
   assert.match(html, /Solid raw/)
   assert.match(html, /Lil brotli/)
   assert.match(html, /LSX/)
+  assert.match(html, /@lil\/solidjs/)
   for (const app of apps) {
     assert.ok((await stat(join(root, "_site", "apps", app.id, "solid.html"))).size > 0)
     assert.ok((await stat(join(root, "_site", "apps", app.id, "solidlil.html"))).size > 0)

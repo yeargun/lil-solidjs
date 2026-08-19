@@ -1,4 +1,4 @@
-import { createSignal, flush } from "solidlil"
+import { createSignal, flush } from "@lil/solidjs"
 
 const [count, setCount] = createSignal(0)
 setCount(1)

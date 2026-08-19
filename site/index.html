@@ -17,10 +17,10 @@
         <span>solidlil</span>
       </a>
       <nav aria-label="Main navigation">
+        <a href="#performance">performance</a>
         <a href="#lab">Demos</a>
         <a href="#evidence">sizes</a>
-        <a href="#performance">performance</a>
-        <a href="https://github.com/yeargun/solidlil">GitHub ↗</a>
+        <a href="https://github.com/yeargun/solidjs">GitHub ↗</a>
       </nav>
     </header>
 
@@ -31,8 +31,8 @@
           <h1>Solid,<br /><em>smaller.</em></h1>
           <p class="lede">Same Solid 2.0 client, compiled through LilScript. Official js-framework-benchmark: much smaller Brotli, same or faster CPU. LSX is the JSX layer.</p>
           <div class="install-row">
-            <code>npm install solidlil</code>
-            <button class="copy" data-copy="npm install solidlil" type="button">copy</button>
+            <code>npm install @lil/solidjs</code>
+            <button class="copy" data-copy="npm install @lil/solidjs" type="button">copy</button>
           </div>
           <div class="hero-actions">
             <a class="button primary" href="#lab">Run the lab</a>
@@ -54,6 +54,31 @@
           </div>
           <p class="score-note">Same keyed jumbotron: Solid JSX vs solidlil LSX. CPU is official JFB geomean (lower is faster). Demo sizes are closed-world paired apps.</p>
         </div>
+      </section>
+
+      <section class="performance shell" id="performance">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">js-framework-benchmark · Chrome 151</p>
+            <h2>CPU versus<br />Solid 2.0.</h2>
+          </div>
+          <p>Official keyed jumbotron, 15 blocks, CPU throttling. Same table: Solid JSX vs LSX, both <code>cloneNode</code> templates. Ratio is @lil/solidjs / Solid 2.0 — lower is faster. Geometric mean of the nine keyed totals is <strong>0.92×</strong>.</p>
+        </div>
+        <div class="perf-cards" id="perf-cards"></div>
+        <div class="table-wrap light">
+          <table>
+            <thead>
+              <tr>
+                <th>Workload</th>
+                <th>Solid 2.0</th>
+                <th>@lil/solidjs</th>
+                <th>Ratio</th>
+              </tr>
+            </thead>
+            <tbody id="perf-body"></tbody>
+          </table>
+        </div>
+        <p class="perf-note" id="perf-note"></p>
       </section>
 
       <section class="ticker" aria-label="Supported APIs">
@@ -110,49 +135,25 @@
           </div>
           <div class="method-note">
             <p><strong>Important distinction.</strong> Demo sizes are closed-world application builds, where LilScript can delete unused runtime. Solid 2.0’s npm browser entry is already concatenated (<code>dist/solid.js</code> + <code>dist/web.js</code>), so a counter still carries most of the client. The fairer app-sized number is the <a href="https://github.com/krausest/js-framework-benchmark">js-framework-benchmark</a> keyed table: both are the same jumbotron app, Solid’s JSX compiled by the Solid plugin and solidlil’s LSX compiled by LilScript, then terser. 33,701 B vs 10,020 B JS raw (11,420 B vs 3,609 B Brotli-11). The reusable package ESM is a separate artifact from <code>npm run test:size</code>. Performance is measured on that same JFB harness, not inferred from size.</p>
-            <a href="https://github.com/yeargun/solidlil#what-smaller-means">Read the methodology ↗</a>
+            <a href="https://github.com/yeargun/solidjs#what-smaller-means">Read the methodology ↗</a>
           </div>
         </div>
-      </section>
-
-      <section class="performance shell" id="performance">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Measured, not estimated</p>
-            <h2>Performance<br />versus Solid 2.0.</h2>
-          </div>
-          <p>Node microbenchmarks run the same graph operations against <code>solid-js@2.0.0-rc.0</code>. Browser numbers are official <a href="https://github.com/krausest/js-framework-benchmark">js-framework-benchmark</a> Playwright medians (CPU throttling, 15 blocks) on the keyed jumbotron table versus Solid 2.0. Both apps are the same table; Solid’s JSX and solidlil’s LSX compile to <code>cloneNode</code> templates.</p>
-        </div>
-        <div class="table-wrap light">
-          <table>
-            <thead>
-              <tr>
-                <th>Benchmark</th>
-                <th>Solid 2.0</th>
-                <th>solidlil</th>
-                <th>Ratio</th>
-              </tr>
-            </thead>
-            <tbody id="perf-body"></tbody>
-          </table>
-        </div>
-        <p class="perf-note" id="perf-note"></p>
       </section>
 
       <section class="closing shell">
         <p class="eyebrow">Zero runtime dependencies</p>
         <h2>Drop Solid 2.0 into<br />a smaller box.</h2>
         <div class="install-row large">
-          <code>npm install solidlil</code>
-          <button class="copy" data-copy="npm install solidlil" type="button">copy</button>
+          <code>npm install @lil/solidjs</code>
+          <button class="copy" data-copy="npm install @lil/solidjs" type="button">copy</button>
         </div>
       </section>
     </main>
 
     <footer class="shell">
-      <span>solidlil · MIT</span>
+      <span>@lil/solidjs · MIT</span>
       <span>Solid 2.0 client runtime ported to LilScript</span>
-      <a href="https://github.com/yeargun/solidlil">source ↗</a>
+      <a href="https://github.com/yeargun/solidjs">source ↗</a>
     </footer>
   </body>
 </html>

@@ -28,7 +28,7 @@ test("Vite bundles the public package entry", async () => {
     assert.ok(match, html)
     const bundle = await readFile(resolve(output, "assets", match[1]), "utf8")
     assert.match(bundle, /solidlil-ok/)
-    assert.doesNotMatch(bundle, /from["']solidlil["']/)
+    assert.doesNotMatch(bundle, /from["']@lil\/solidjs["']/)
   } finally {
     await rm(output, { recursive: true, force: true })
   }

@@ -1,6 +1,6 @@
-import { createEffect, createMemo, createSignal, createStore, flush } from "solidlil"
-import { render } from "solidlil/web"
-import { keyedEach } from "solidlil/full"
+import { createEffect, createMemo, createSignal, createStore, flush } from "@lil/solidjs"
+import { render } from "@lil/solidjs/web"
+import { keyedEach } from "@lil/solidjs/full"
 
 const [count, setCount] = createSignal(0)
 setCount(1)

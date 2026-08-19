@@ -9,9 +9,9 @@
     "skipLibCheck": false,
     "baseUrl": ".",
     "paths": {
-      "solidlil": ["../../types/index.d.ts"],
-      "solidlil/web": ["../../types/web.d.ts"],
-      "solidlil/full": ["../../types/full.d.ts"]
+      "@lil/solidjs": ["../../types/index.d.ts"],
+      "@lil/solidjs/web": ["../../types/web.d.ts"],
+      "@lil/solidjs/full": ["../../types/full.d.ts"]
     }
   },
   "include": ["consumer.ts"]
