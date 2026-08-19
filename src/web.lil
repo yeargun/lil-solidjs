@@ -45,6 +45,137 @@ export {
 
 void emptyDispose() {}
 
+bool hydrating = false;
+Element? hydrateCursor = null;
+int nextRevealId = 0;
+
+export class RevealSlot {
+  int ownerId;
+  int index;
+  bool ready;
+
+  init(int ownerId, int index) {
+    this.ownerId = ownerId;
+    this.index = index;
+    this.ready = false;
+  }
+}
+
+class RevealController {
+  int id;
+  RevealSlot[] slots;
+  string order;
+  bool collapsed;
+  Signal<int> version;
+
+  init(string order, bool collapsed) {
+    this.id = nextRevealId;
+    nextRevealId += 1;
+    this.slots = [];
+    this.order = order;
+    this.collapsed = collapsed;
+    this.version = createIntSignal(0);
+  }
+
+  RevealSlot addSlot() {
+    RevealSlot slot = new RevealSlot(this.id, this.slots.length);
+    this.slots.push(slot);
+    return slot;
+  }
+
+  bool allowed(RevealSlot slot) {
+    this.version.read();
+    if (this.order == "natural") {
+      return true;
+    }
+    if (this.order == "together") {
+      for (int index = 0; index < this.slots.length; index++) {
+        if (!this.slots[index].ready) {
+          return false;
+        }
+      }
+      return true;
+    }
+    for (int index = 0; index < this.slots.length; index++) {
+      if (this.slots[index].index == slot.index) {
+        return true;
+      }
+      if (!this.slots[index].ready) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool showFallback(RevealSlot slot) {
+    if (!this.collapsed || this.order != "sequential") {
+      return true;
+    }
+    for (int index = 0; index < this.slots.length; index++) {
+      if (this.slots[index].index == slot.index) {
+        return true;
+      }
+      if (!this.slots[index].ready) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void setReady(RevealSlot slot, bool ready) {
+    if (slot.ready == ready) {
+      return;
+    }
+    slot.ready = ready;
+    Signal<int> version = this.version;
+    version.write(version.peek() + 1);
+  }
+}
+
+RevealController[] revealControllers = [];
+RevealController[] revealStack = [];
+
+RevealController revealOwner(RevealSlot slot) {
+  return revealControllers[slot.ownerId];
+}
+
+export bool isHydrating() {
+  return hydrating;
+}
+
+export RevealSlot? openRevealSlot() {
+  if (revealStack.length == 0) {
+    return null;
+  }
+  return revealStack[revealStack.length - 1].addSlot();
+}
+
+export bool revealAllowed(RevealSlot slot) {
+  return revealOwner(slot).allowed(slot);
+}
+
+export bool revealShowFallback(RevealSlot slot) {
+  return revealOwner(slot).showFallback(slot);
+}
+
+export void revealSetReady(RevealSlot slot, bool ready) {
+  revealOwner(slot).setReady(slot, ready);
+}
+
+void placeMarker(Element parent, Element marker) {
+  if (!hydrating) {
+    parent.appendChild(marker);
+  }
+}
+
+void attach(Element parent, Element child, Element? before) {
+  Element? existing = child.parentNode;
+  if (hydrating && existing == parent) {
+    return;
+  }
+  parent.insertBefore(child, before);
+}
+
 void wipeAfterMarker(Element marker) {
   Element? host = marker.parentNode;
   if (host == null) {
@@ -58,6 +189,19 @@ void wipeAfterMarker(Element marker) {
 void appendNodes(Element parent, Element marker, Element[] nodes) {
   if (nodes.length == 0) {
     return;
+  }
+  if (hydrating) {
+    bool owned = true;
+    for (int index = 0; index < nodes.length; index++) {
+      Element? existing = nodes[index].parentNode;
+      if (existing != parent) {
+        owned = false;
+        break;
+      }
+    }
+    if (owned) {
+      return;
+    }
   }
   Element fragment = document.createDocumentFragment();
   for (int index = 0; index < nodes.length; index++) {
@@ -79,6 +223,14 @@ export Element prepareTemplate(string html) {
 }
 
 export Element cloneTemplate(Element node) {
+  if (hydrating) {
+    Element? cursor = hydrateCursor;
+    if (cursor != null) {
+      Element claimed = cursor;
+      hydrateCursor = claimed.nextSibling;
+      return claimed;
+    }
+  }
   return node.cloneNode(true);
 }
 
@@ -115,6 +267,10 @@ export Element nextSibling(Element node) {
 }
 
 export void append(Element parent, Element child) {
+  Element? existing = child.parentNode;
+  if (hydrating && existing == parent) {
+    return;
+  }
   parent.appendChild(child);
 }
 
@@ -237,6 +393,44 @@ export func()->void renderNode(Element mount, func(Element)->void app) {
   });
 }
 
+export func()->void hydrate(string selector, func(Element)->void app) {
+  Element? root = document.querySelector(selector);
+  if (root == null) {
+    throw "solidlil: hydrate root not found";
+  }
+  return hydrateNode(root, app);
+}
+
+export func()->void hydrateNode(Element mount, func(Element)->void app) {
+  bool previous = hydrating;
+  Element? previousCursor = hydrateCursor;
+  hydrating = true;
+  hydrateCursor = mount.firstChild;
+  func()->void dispose = createRoot((func()->void dispose) => {
+    app(mount);
+    onCleanup(() => clear(mount));
+    return dispose;
+  });
+  hydrating = previous;
+  hydrateCursor = previousCursor;
+  return dispose;
+}
+
+export void reveal(Element parent, func()->void children) {
+  revealOrdered(parent, children, "sequential", false);
+}
+
+export void revealOrdered(Element parent, func()->void children, string order, bool collapsed) {
+  RevealController controller = new RevealController(order, collapsed);
+  revealControllers.push(controller);
+  revealStack.push(controller);
+  try {
+    children();
+  } finally {
+    revealStack.pop();
+  }
+}
+
 class Disposer {
   func()->void run;
 
@@ -257,7 +451,7 @@ export void show(
   func()->Element fallback
 ) {
   Element marker = comment();
-  parent.appendChild(marker);
+  placeMarker(parent, marker);
   Element? current = null;
   Disposer? currentDispose = null;
   createRenderEffect(() => {
@@ -274,7 +468,7 @@ export void show(
         next = fallback();
       }
       Element? after = marker.nextSibling;
-      parent.insertBefore(next, after);
+      attach(parent, next, after);
       current = next;
       return dispose;
     }));
@@ -298,7 +492,7 @@ export void switchIndex(
   func()->Element fallback
 ) {
   Element marker = comment();
-  parent.appendChild(marker);
+  placeMarker(parent, marker);
   Element? current = null;
   createRenderEffect(() => {
     int index = selected();
@@ -313,7 +507,7 @@ export void switchIndex(
       removeNode(current);
     }
     Element? after = marker.nextSibling;
-    parent.insertBefore(next, after);
+    attach(parent, next, after);
     current = next;
   });
   onCleanup(() => {
@@ -520,7 +714,7 @@ void keyedEachTracked<T>(
   bool trackIndex
 ) {
   Element marker = comment();
-  parent.appendChild(marker);
+  placeMarker(parent, marker);
   TableRef<T> holder = new TableRef();
   Signal<int> unusedIndex = createIntSignal(0);
   func(T[])->void reconcile = (T[] nextItems) => {
@@ -657,7 +851,7 @@ export void identityEach<T>(
   func(T, Signal<int>)->Element createRow
 ) {
   Element marker = comment();
-  parent.appendChild(marker);
+  placeMarker(parent, marker);
   IdentityRef<T> holder = new IdentityRef();
   func(T[])->void reconcile = (T[] nextItems) => {
     IdentityRow<T>[] previous = holder.current.order;
@@ -720,7 +914,7 @@ export void indexEach<T>(
   func(Signal<T>, int)->Element createRow
 ) {
   Element marker = comment();
-  parent.appendChild(marker);
+  placeMarker(parent, marker);
   Signal<T>[] itemSignals = [];
   Element[] nodes = [];
   (func()->void)[] disposers = [];
@@ -775,7 +969,7 @@ export void repeat(
   func(int)->Element createRow
 ) {
   Element marker = comment();
-  parent.appendChild(marker);
+  placeMarker(parent, marker);
   Element[] nodes = [];
   (func()->void)[] disposers = [];
   createRenderEffect(() => {
@@ -829,9 +1023,24 @@ export void loading(
   func()->Element fallback
 ) {
   Element marker = comment();
-  parent.appendChild(marker);
+  placeMarker(parent, marker);
   Element? current = null;
+  RevealSlot? slot = openRevealSlot();
   createRenderEffect(() => {
+    if (slot != null) {
+      RevealSlot currentSlot = slot;
+      if (!revealAllowed(currentSlot)) {
+        if (revealShowFallback(currentSlot)) {
+          Element held = untrack(fallback);
+          if (current != null) {
+            removeNode(current);
+          }
+          attach(parent, held, marker.nextSibling);
+          current = held;
+        }
+        return;
+      }
+    }
     enablePendingThrows(true);
     try {
       if (current != null) {
@@ -839,13 +1048,18 @@ export void loading(
         current = null;
       }
       ready();
+      if (slot != null) {
+        revealSetReady(slot, true);
+      }
     } catch (auto error) {
+      if (slot != null) {
+        revealSetReady(slot, false);
+      }
       Element next = untrack(fallback);
       if (current != null) {
         removeNode(current);
       }
-      Element? after = marker.nextSibling;
-      parent.insertBefore(next, after);
+      attach(parent, next, marker.nextSibling);
       current = next;
     } finally {
       enablePendingThrows(false);
@@ -869,7 +1083,7 @@ export void errored(
   func(string, func()->void)->Element fallback
 ) {
   Element marker = comment();
-  parent.appendChild(marker);
+  placeMarker(parent, marker);
   Element? current = null;
   Signal<string> message = createStringSignal("");
   Signal<bool> failed = createBoolSignal(false);
@@ -887,7 +1101,7 @@ export void errored(
         removeNode(current);
       }
       Element? after = marker.nextSibling;
-      parent.insertBefore(next, after);
+      attach(parent, next, after);
       current = next;
       return;
     }

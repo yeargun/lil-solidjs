@@ -909,3 +909,81 @@ export int diagnosticFreeEffectSlots() {
 export int diagnosticPendingEffects() {
   return renderQueue.length + userQueue.length;
 }
+
+class ActionRevert {
+  int key;
+  func()->void undo;
+
+  init(int key, func()->void undo) {
+    this.key = key;
+    this.undo = undo;
+  }
+
+  void run() {
+    func()->void undo = this.undo;
+    this.undo = noop;
+    undo();
+  }
+}
+
+class ActionFrame {
+  ActionRevert[] reverts;
+
+  init() {
+    this.reverts = [];
+  }
+}
+
+ActionFrame[] actionFrames = [];
+
+export bool inAction() {
+  return actionFrames.length > 0;
+}
+
+export void beginAction() {
+  actionFrames.push(new ActionFrame());
+}
+
+export void rememberRevert(int key, func()->void undo) {
+  if (actionFrames.length == 0) {
+    return;
+  }
+  ActionFrame frame = actionFrames[actionFrames.length - 1];
+  for (int index = 0; index < frame.reverts.length; index++) {
+    if (frame.reverts[index].key == key) {
+      return;
+    }
+  }
+  frame.reverts.push(new ActionRevert(key, undo));
+}
+
+export void rememberOptimistic<T>(Signal<T> signal) {
+  T base = signal.peek();
+  Signal<T> captured = signal;
+  rememberRevert(signal.id, () => {
+    captured.commitNow(base);
+  });
+}
+
+export T optimisticSet<T>(Signal<T> signal, T value) {
+  rememberOptimistic(signal);
+  return signal.write(value);
+}
+
+export Signal<T> createOptimisticSignal<T>(T initial, func(T, T)->bool equals) {
+  return createSignal(initial, equals);
+}
+
+export void endAction(bool commit) {
+  if (actionFrames.length == 0) {
+    return;
+  }
+  ActionFrame frame = actionFrames[actionFrames.length - 1];
+  actionFrames.pop();
+  if (commit) {
+    return;
+  }
+  for (int index = frame.reverts.length - 1; index >= 0; index--) {
+    frame.reverts[index].run();
+  }
+}

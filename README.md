@@ -54,7 +54,7 @@ createRoot(() => {
 
 ## Compatibility
 
-`@itslil/solidjs` targets **Solid 2.0** (`solid-js@2.0.0-rc.0`, `@solidjs/web@2.0.0-rc.0`): queued writes until `flush()`, split `createEffect(compute, apply)`, `For` / `Repeat` / `Show` / `Switch`, `Loading` / `Errored`, draft-first stores, `onSettled`, `isPending` / `latest`, promise memos, `action`, `createOptimistic` / `createOptimisticStore`, `lazy`, `children`, `createUniqueId`, `runWithOwner`. Solid 2.0 dropped `batch`, `createResource`, and `startTransition`; we match that. Official JFB measures `render()` on both sides.
+`@itslil/solidjs` is the Solid 2.0 **client** (`solid-js@2.0.0-rc.0`, `@solidjs/web@2.0.0-rc.0`): every public export, including `flush`, split `createEffect`, `For` / `Repeat` / `Show` / `Switch` / `Reveal`, `Loading` / `Errored`, stores, `createProjection` / `reconcile`, `action` / `createOptimistic`, `hydrate` (claims existing DOM), `renderToString` / `renderToStream`, `lazy`, `children`, and the rest of the 2.0 authoring surface. LSX `hydrate()` / `<Reveal>` compile to the same Lil primitives. Solid 2.0 dropped `batch`, `createResource`, and `startTransition`; we match that. Official JFB still measures `render()` of the same keyed table on both sides.
 
 LilScript apps are written in **LSX** (`.lilx`) — JSX for LilScript — and compile closed-world (`import … from "solidlil"`). JavaScript consumers use the tuple helpers on the default entry. A DOM app should import only from `@itslil/solidjs/web` so it shares one reactive graph; mixing `@itslil/solidjs` with `@itslil/solidjs/web` duplicates the runtime.
 

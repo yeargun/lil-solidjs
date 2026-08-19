@@ -67,7 +67,7 @@ async function emitBundled(entry, outfile, format, platform = "browser") {
     platform,
     format,
     target: "es2020",
-    treeShaking: true,
+    treeShaking: false,
     legalComments: "none",
     logLevel: "warning",
     outfile,
@@ -76,87 +76,43 @@ async function emitBundled(entry, outfile, format, platform = "browser") {
   await terserMinify(outfile, format === "esm")
 }
 
+function rewrite(sourceText) {
+  return sourceText
+    .replaceAll("./.__compiled-core.mjs", "./core.js")
+    .replaceAll("./compat.mjs", "./compat.js")
+    .replaceAll("./solid-api.mjs", "./solid-api.js")
+    .replaceAll("./lil-web.js", "./lil-web.js")
+}
+
 try {
   const core = await compile("core", "entries/core.lil")
   const web = await compile("web", "web.lil")
   const full = await compile("full", "entries/full.lil")
   await emitBundled(core, join(dist, "core.js"), "esm")
   await emitBundled(core, join(dist, "core.cjs"), "cjs", "neutral")
-  await emitBundled(web, join(dist, "web.js"), "esm")
-  await emitBundled(web, join(dist, "web.cjs"), "cjs", "neutral")
+  await emitBundled(web, join(dist, "lil-web.js"), "esm")
+  await emitBundled(web, join(dist, "lil-web.cjs"), "cjs", "neutral")
   await emitBundled(full, join(dist, "full.js"), "esm")
   await emitBundled(full, join(dist, "full.cjs"), "cjs", "neutral")
   await emitBundled(full, join(dist, "solidlil.global.js"), "iife")
 
-  const compatSource = (await readFile(join(source, "compat.mjs"), "utf8")).replaceAll(
-    "./.__compiled-core.mjs",
-    "./core.js",
-  )
+  const compatSource = rewrite(await readFile(join(source, "compat.mjs"), "utf8"))
   await writeFile(join(dist, "compat.js"), compatSource)
+  await writeFile(join(dist, "solid-api.js"), rewrite(await readFile(join(source, "solid-api.mjs"), "utf8")))
+  await writeFile(join(dist, "dom-tables.js"), await readFile(join(source, "dom-tables.mjs"), "utf8"))
   await writeFile(
-    join(dist, "index.js"),
-    [
-      'export {',
-      '  createAsyncMemo,',
-      '  createBoolMemo,',
-      '  createBoolSignal,',
-      '  createContext,',
-      '  createIntMemo,',
-      '  createIntSignal,',
-      '  createJsSignal,',
-      '  createRenderBind,',
-      '  createRenderEffect,',
-      '  createRoot,',
-      '  createSelector,',
-      '  createStringMemo,',
-      '  createStringSignal,',
-      '  createUserEffect,',
-      '  diagnosticEffectSlots,',
-      '  diagnosticFreeEffectSlots,',
-      '  diagnosticFreeOwnerSlots,',
-      '  diagnosticOwnerSlots,',
-      '  diagnosticPendingEffects,',
-      '  enablePendingThrows,',
-      '  flush,',
-      '  onCleanup,',
-      '  onSettled,',
-      '  provideContext,',
-      '  selectorMatch,',
-      '  signalCommit,',
-      '  signalGet,',
-      '  signalMarkPending,',
-      '  signalPeek,',
-      '  signalPending,',
-      '  signalSet,',
-      '  signalUpdate,',
-      '  untrack,',
-      '  useContext,',
-      '  storeGet,',
-      '  storeReplace,',
-      '  storeSet,',
-      '  storeVersion,',
-      '} from "./core.js"',
-      'export {',
-      '  action,',
-      '  children,',
-      '  createEffect,',
-      '  createMemo,',
-      '  createOptimistic,',
-      '  createOptimisticStore,',
-      '  createSignal,',
-      '  createStore,',
-      '  createUniqueId,',
-      '  getOwner,',
-      '  isPending,',
-      '  latest,',
-      '  lazy,',
-      '  runWithOwner,',
-      '} from "./compat.js"',
-      "",
-    ].join("\n"),
+    join(dist, "web-api.js"),
+    (await readFile(join(source, "web-api.mjs"), "utf8"))
+      .replaceAll("./solid-api.mjs", "./solid-api.js")
+      .replaceAll("./dom-tables.mjs", "./dom-tables.js")
+      .replaceAll("./lil-web.js", "./lil-web.js"),
   )
-  await emitBundled(join(dist, "index.js"), join(dist, "index.cjs"), "cjs", "neutral")
-  await emitBundled(join(dist, "index.js"), join(dist, "index.bundle.js"), "esm")
+
+  await emitBundled(join(dist, "solid-api.js"), join(dist, "index.js"), "esm")
+  await emitBundled(join(dist, "solid-api.js"), join(dist, "index.cjs"), "cjs", "neutral")
+  await emitBundled(join(dist, "solid-api.js"), join(dist, "index.bundle.js"), "esm")
+  await emitBundled(join(dist, "web-api.js"), join(dist, "web.js"), "esm")
+  await emitBundled(join(dist, "web-api.js"), join(dist, "web.cjs"), "cjs", "neutral")
 } finally {
   await Promise.all(temps.map((file) => rm(file, { force: true })))
 }

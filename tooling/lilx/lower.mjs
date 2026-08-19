@@ -505,6 +505,8 @@ function lowerBuiltinChild(node, context, parentVariable, namespace) {
     return lowerSuspense(node, context, parentVariable, namespace);
   if (node.tag === "Dynamic")
     return lowerDynamic(node, context, parentVariable, namespace);
+  if (node.tag === "Reveal")
+    return lowerReveal(node, context, parentVariable, namespace);
   if (node.tag === "Portal")
     return lowerPortal(node, context, parentVariable, namespace);
   if (node.tag === "Match") throw new Error("Match requires a Switch parent");
@@ -808,6 +810,25 @@ function lowerDynamic(node, context, parentVariable, namespace = "html") {
   };
 }
 
+function lowerReveal(node, context, parentVariable, namespace = "html") {
+  if (!parentVariable) throw new Error("Reveal requires a parent element");
+  const children = lowerNodeArray(node.children, context, namespace, "Reveal");
+  const order = propertyValue(node, "order", '"sequential"');
+  const collapsed = propertyValue(node, "collapsed", "false");
+  return {
+    varName: parentVariable,
+    code: [
+      `revealOrdered(${parentVariable}, () => {`,
+      ...children.code.map((line) => `  ${line}`),
+      `  Element[] nodes = ${nodeArrayExpression(children)};`,
+      "  for (int i = 0; i < nodes.length; i++) {",
+      `    ${parentVariable}.appendChild(nodes[i]);`,
+      "  }",
+      `}, ${order}, ${collapsed});`,
+    ],
+  };
+}
+
 function lowerPortal(node, context, parentVariable, namespace = "html") {
   if (!parentVariable) throw new Error("Portal requires a parent element");
   const mount = propertyExpression(node, "mount")?.trim() || 'query("body")';
@@ -942,6 +963,9 @@ function isBuiltinComponent(tag) {
     "Loading",
     "Dynamic",
     "Portal",
+    "Reveal",
+    "Hydration",
+    "NoHydration",
   ]).has(tag);
 }
 

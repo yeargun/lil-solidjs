@@ -11,7 +11,7 @@ import {
   isPending,
   lazy,
 } from "@itslil/solidjs"
-import { render } from "@itslil/solidjs/web"
+import { generateHydrationScript, render } from "@itslil/solidjs/web"
 import { keyedEach } from "@itslil/solidjs/full"
 
 const [count, setCount] = createSignal(0)
@@ -46,6 +46,8 @@ void isPending(doubled)
 void children(() => count())
 void createUniqueId()
 void lazy(async () => ({ default: () => null }))
+
+void generateHydrationScript()
 
 render("#app", (root) => {
   root.textContent = "ok"

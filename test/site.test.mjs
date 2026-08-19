@@ -46,6 +46,7 @@ test("every API used by the live recreations exists in solidlil", () => {
   for (const name of [
     "createSignal", "createMemo", "createEffect", "flush", "createRoot", "createStore",
     "action", "createOptimistic", "createOptimisticStore", "isPending", "latest", "lazy", "children",
+    "createProjection", "reconcile", "mapArray", "createRevealOrder",
   ]) {
     assert.equal(typeof runtime[name], "function", `${name} is not callable`)
   }

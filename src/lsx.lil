@@ -22,6 +22,7 @@ import {
   comment,
   element,
   firstChild,
+  hydrate,
   identityEach,
   indexEach,
   insertBefore,
@@ -31,10 +32,17 @@ import {
   every,
   hostDocument,
   nextSibling,
+  openRevealSlot,
+  RevealSlot,
   prepareTemplate,
   removeNode,
   render,
   repeat,
+  reveal,
+  revealAllowed,
+  revealOrdered,
+  revealSetReady,
+  revealShowFallback,
   setText,
   stopEvery,
   svgElement,
@@ -52,9 +60,12 @@ export {
   every,
   firstChild,
   hostDocument,
+  hydrate,
   nextSibling,
   prepareTemplate,
   render,
+  reveal,
+  revealOrdered,
   setText,
   stopEvery,
   svgElement,
@@ -469,13 +480,29 @@ export void dynamicLoading(
   func()->Element[] fallback
 ) {
   Branch branch = new Branch();
+  RevealSlot? slot = openRevealSlot();
   onCleanup(() => branch.clear());
   createRenderEffect(() => {
+    if (slot != null) {
+      RevealSlot current = slot;
+      if (!revealAllowed(current)) {
+        if (revealShowFallback(current)) {
+          target.replace(branch.render(fallback));
+        }
+        return;
+      }
+    }
     enablePendingThrows(true);
     try {
       Element[] nodes = children();
       target.replace(branch.render(() => nodes));
+      if (slot != null) {
+        revealSetReady(slot, true);
+      }
     } catch (auto error) {
+      if (slot != null) {
+        revealSetReady(slot, false);
+      }
       target.replace(branch.render(fallback));
     } finally {
       enablePendingThrows(false);

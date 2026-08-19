@@ -58,6 +58,13 @@ const DOM_IMPORTS = [
   "reactiveText",
   "region",
   "render",
+  "reveal",
+  "revealOrdered",
+  "hydrate",
+  "openRevealSlot",
+  "revealAllowed",
+  "revealSetReady",
+  "revealShowFallback",
   "setText",
   "spreadProps",
   "stringProperty",
@@ -77,10 +84,16 @@ const REACTIVE_IMPORTS = [
   "createEffect",
   "createIntMemo",
   "createIntSignal",
+  "beginAction",
   "createAsyncMemo",
   "createMemo",
+  "createOptimisticSignal",
   "createSignal",
   "createUniqueId",
+  "endAction",
+  "inAction",
+  "optimisticSet",
+  "rememberOptimistic",
   "createSelector",
   "createStringSignal",
   "createUserEffect",
@@ -94,7 +107,7 @@ const REACTIVE_IMPORTS = [
   "useContext",
 ];
 
-const STORE_IMPORTS = ["Store", "createStore"];
+const STORE_IMPORTS = ["Store", "createStore", "createProjection", "storeReconcile"];
 
 export function compileLilx(
   source,

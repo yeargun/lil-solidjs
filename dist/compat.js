@@ -1,6 +1,5 @@
 import {
   createContext,
-  createEffect as createSplitEffect,
   createIntMemo,
   createIntSignal,
   createJsSignal,
@@ -10,13 +9,18 @@ import {
   createStore as createLilStore,
   createUniqueId,
   createUserEffect,
+  beginAction,
+  endAction,
   flush,
   getOwner as getOwnerId,
+  inAction,
   isPending as signalIsPending,
   latest as signalLatest,
   onCleanup,
-  onSettled,
+  onSettled as lilOnSettled,
   provideContext,
+  rememberOptimistic,
+  rememberRevert,
   runWithOwner as runWithOwnerId,
   signalCommit,
   signalGet,
@@ -26,6 +30,7 @@ import {
   signalSet,
   signalUpdate,
   storeGet,
+  storeId,
   storeReplace,
   storeSet,
   untrack,
@@ -40,15 +45,12 @@ export {
   createUserEffect,
   flush,
   onCleanup,
-  onSettled,
   provideContext,
   storeGet,
   storeSet,
   untrack,
   useContext,
 }
-
-const actionFrames = []
 
 function equalsOf(options) {
   if (!options) return Object.is
@@ -67,8 +69,11 @@ function accessorOf(signal) {
   return read
 }
 
-function currentAction() {
-  return actionFrames.length > 0 ? actionFrames[actionFrames.length - 1] : null
+export function onSettled(callback) {
+  lilOnSettled(() => {
+    const cleanup = callback()
+    if (typeof cleanup === "function") onCleanup(cleanup)
+  })
 }
 
 export function getOwner() {
@@ -104,7 +109,7 @@ export function createMemo(compute, options) {
   const equals = equalsOf(options)
   const signal = createEqualsSignal(undefined, equals)
   let epoch = 0
-  createRenderEffect(() => {
+  const run = () => {
     const result = compute()
     if (isThenable(result)) {
       const token = ++epoch
@@ -124,20 +129,59 @@ export function createMemo(compute, options) {
       return
     }
     epoch += 1
-    if (signalPending(signal)) signalMarkPending(signal, false)
+    if (untrack(() => signalPending(signal))) signalMarkPending(signal, false)
     signalCommit(signal, result)
-  })
-  return accessorOf(signal)
+  }
+  const start = () => {
+    createRenderEffect(run)
+  }
+  if (options?.lazy) {
+    const read = () => {
+      if (!read._started) {
+        read._started = true
+        start()
+      }
+      return signalGet(signal)
+    }
+    read._signal = signal
+    read.refresh = run
+    return read
+  }
+  start()
+  const read = accessorOf(signal)
+  read.refresh = run
+  return read
 }
 
 export function createEffect(compute, apply, options) {
-  if (typeof apply === "function") {
-    createSplitEffect(compute, apply)
-    return
+  const effectOptions = typeof apply === "object" && apply != null ? apply : options
+  const applyFn = typeof apply === "function"
+    ? apply
+    : typeof apply?.effect === "function"
+      ? apply.effect
+      : undefined
+  const errorFn = effectOptions?.error
+  let skip = !!effectOptions?.defer
+  const run = () => {
+    try {
+      if (!applyFn) {
+        compute()
+        return
+      }
+      const value = compute()
+      if (skip) {
+        skip = false
+        return
+      }
+      const cleanup = untrack(() => applyFn(value))
+      if (typeof cleanup === "function") onCleanup(cleanup)
+    } catch (error) {
+      if (typeof errorFn === "function") errorFn(error)
+      else throw error
+    }
   }
-  createUserEffect(() => {
-    compute()
-  })
+  if (applyFn) createUserEffect(run)
+  else createUserEffect(run)
 }
 
 export function createMemoInt(compute) {
@@ -155,7 +199,10 @@ export function createStore(initial) {
   const read = () => storeGet(store)
   const write = (updater) => {
     if (typeof updater === "function") {
-      storeSet(store, updater)
+      const current = storeGet(store)
+      const result = updater(current)
+      if (result !== undefined && result !== current) storeReplace(store, result)
+      else storeReplace(store, current)
       return
     }
     storeReplace(store, updater)
@@ -168,11 +215,7 @@ export function createOptimistic(initial, options) {
     ? createIntSignal(initial)
     : createEqualsSignal(initial, equalsOf(options))
   const write = (value) => {
-    const frame = currentAction()
-    if (frame && !frame.bases.has(signal)) {
-      frame.bases.set(signal, signalPeek(signal))
-      frame.reverts.set(signal, () => signalCommit(signal, frame.bases.get(signal)))
-    }
+    rememberOptimistic(signal)
     if (typeof value === "function") return signalUpdate(signal, value)
     return signalSet(signal, value)
   }
@@ -183,13 +226,15 @@ export function createOptimisticStore(initial) {
   const store = createLilStore(initial)
   const read = () => storeGet(store)
   const write = (updater) => {
-    const frame = currentAction()
-    if (frame && !frame.reverts.has(store)) {
+    if (inAction()) {
       const snapshot = structuredClone(storeGet(store))
-      frame.reverts.set(store, () => storeReplace(store, snapshot))
+      rememberRevert(storeId(store), () => storeReplace(store, snapshot))
     }
     if (typeof updater === "function") {
-      storeSet(store, updater)
+      const current = storeGet(store)
+      const result = updater(current)
+      if (result !== undefined && result !== current) storeReplace(store, result)
+      else storeReplace(store, current)
       return
     }
     storeReplace(store, updater)
@@ -199,14 +244,7 @@ export function createOptimisticStore(initial) {
 
 export function action(genFn) {
   return (...args) => {
-    const frame = { reverts: new Map(), bases: new Map() }
-    actionFrames.push(frame)
-    const revert = () => {
-      for (const undo of frame.reverts.values()) undo()
-    }
-    const finish = () => {
-      if (actionFrames[actionFrames.length - 1] === frame) actionFrames.pop()
-    }
+    beginAction()
     const run = async () => {
       try {
         const iter = genFn(...args)
@@ -217,18 +255,18 @@ export function action(genFn) {
             const yielded = await step.value
             step = await iter.next(yielded)
           }
+          endAction(true)
           flush()
           return step.value
         }
         const result = await iter
+        endAction(true)
         flush()
         return result
       } catch (error) {
-        revert()
+        endAction(false)
         flush()
         throw error
-      } finally {
-        finish()
       }
     }
     return run()

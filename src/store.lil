@@ -1,4 +1,4 @@
-import { Signal, createIntSignal, signalGet } from "./reactive";
+import { Signal, createIntSignal, createRenderEffect, signalGet, untrack } from "./reactive";
 
 export class Store<T> {
   T value;
@@ -45,4 +45,21 @@ export void storeReplace<T>(Store<T> store, T next) {
 
 export int storeVersion<T>(Store<T> store) {
   return signalGet(store.version);
+}
+
+export int storeId<T>(Store<T> store) {
+  return store.version.id;
+}
+
+export Store<T> createProjection<T>(T seed, func()->T compute) {
+  Store<T> store = createStore(seed);
+  createRenderEffect(() => {
+    T next = compute();
+    untrack(() => store.replace(next));
+  });
+  return store;
+}
+
+export void storeReconcile<T>(Store<T> store, T next) {
+  untrack(() => store.replace(next));
 }
