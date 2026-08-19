@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-19T06:04:36.241Z",
+  "generatedAt": "2026-08-19T11:41:53.332Z",
   "compression": {
     "gzip": 9,
     "brotli": 11
@@ -10,37 +10,37 @@
   "cases": 18,
   "metrics": {
     "raw": {
-      "solid": 564547,
-      "solidlil": 121661,
-      "weightedReduction": 78.4498013451493,
-      "medianReduction": 80.83867613931727,
-      "minimumReduction": 67.46977497541505,
-      "maximumReduction": 86.01039388406204,
+      "solid": 550651,
+      "solidlil": 116918,
+      "weightedReduction": 78.76731359790503,
+      "medianReduction": 81.33319247834353,
+      "minimumReduction": 67.6147689744429,
+      "maximumReduction": 85.85713379701076,
       "wins": 18
     },
     "gzip": {
-      "solid": 212954,
-      "solidlil": 51679,
-      "weightedReduction": 75.7323177775482,
-      "medianReduction": 78.49108367626886,
-      "minimumReduction": 64.61385836385836,
-      "maximumReduction": 83.42927401777231,
+      "solid": 211776,
+      "solidlil": 50809,
+      "weightedReduction": 76.00814067694166,
+      "medianReduction": 78.88544326887997,
+      "minimumReduction": 64.72808504082576,
+      "maximumReduction": 83.27235307569174,
       "wins": 18
     },
     "brotli": {
-      "solid": 193259,
-      "solidlil": 45801,
-      "weightedReduction": 76.30071561997113,
-      "medianReduction": 79.22496225465527,
-      "minimumReduction": 65.09999156189352,
-      "maximumReduction": 83.58894753182243,
+      "solid": 192193,
+      "solidlil": 45155,
+      "weightedReduction": 76.50538781329185,
+      "medianReduction": 79.56709089087083,
+      "minimumReduction": 65.30212765957447,
+      "maximumReduction": 83.4123822171631,
       "wins": 18
     }
   },
   "keyedPerformance": {
-    "raw": 9330,
-    "gzip": 3991,
-    "brotli": 3528
+    "raw": 9074,
+    "gzip": 3920,
+    "brotli": 3457
   },
   "artifacts": {
     "core": {
@@ -70,19 +70,19 @@
       "title": "Counter",
       "group": "reactive",
       "solid": {
-        "raw": 26721,
-        "gzip": 10267,
-        "brotli": 9349
+        "raw": 26837,
+        "gzip": 10375,
+        "brotli": 9434
       },
       "solidlil": {
-        "raw": 4420,
-        "gzip": 1967,
-        "brotli": 1728
+        "raw": 4171,
+        "gzip": 1951,
+        "brotli": 1738
       },
       "reduction": {
-        "raw": 83.45870289285581,
-        "gzip": 80.84153111911951,
-        "brotli": 81.51673975826291
+        "raw": 84.45802436934083,
+        "gzip": 81.19518072289156,
+        "brotli": 81.57727369090524
       }
     },
     {
@@ -90,19 +90,19 @@
       "title": "Split effects",
       "group": "reactive",
       "solid": {
-        "raw": 27843,
-        "gzip": 10560,
-        "brotli": 9610
+        "raw": 27098,
+        "gzip": 10516,
+        "brotli": 9527
       },
       "solidlil": {
-        "raw": 4744,
-        "gzip": 2128,
-        "brotli": 1874
+        "raw": 4534,
+        "gzip": 2092,
+        "brotli": 1847
       },
       "reduction": {
-        "raw": 82.9616061487627,
-        "gzip": 79.84848484848484,
-        "brotli": 80.49947970863684
+        "raw": 83.2681378699535,
+        "gzip": 80.1065043742868,
+        "brotli": 80.61299464679333
       }
     },
     {
@@ -110,19 +110,19 @@
       "title": "Form binding",
       "group": "reactive",
       "solid": {
-        "raw": 26828,
-        "gzip": 10320,
-        "brotli": 9394
+        "raw": 26943,
+        "gzip": 10431,
+        "brotli": 9477
       },
       "solidlil": {
-        "raw": 4550,
-        "gzip": 2018,
-        "brotli": 1769
+        "raw": 4360,
+        "gzip": 1995,
+        "brotli": 1765
       },
       "reduction": {
-        "raw": 83.0401073505293,
-        "gzip": 80.44573643410853,
-        "brotli": 81.16883116883116
+        "raw": 83.81768919570946,
+        "gzip": 80.87431693989072,
+        "brotli": 81.37596285744434
       }
     },
     {
@@ -130,19 +130,19 @@
       "title": "Context",
       "group": "reactive",
       "solid": {
-        "raw": 28356,
+        "raw": 27846,
         "gzip": 10731,
-        "brotli": 9743
+        "brotli": 9759
       },
       "solidlil": {
-        "raw": 5151,
-        "gzip": 2242,
-        "brotli": 1997
+        "raw": 4932,
+        "gzip": 2190,
+        "brotli": 1954
       },
       "reduction": {
-        "raw": 81.83453237410072,
-        "gzip": 79.10725934209299,
-        "brotli": 79.50323309042389
+        "raw": 82.28829993535875,
+        "gzip": 79.59183673469387,
+        "brotli": 79.97745670662978
       }
     },
     {
@@ -150,19 +150,19 @@
       "title": "Async memo",
       "group": "reactive",
       "solid": {
-        "raw": 34849,
-        "gzip": 13018,
-        "brotli": 11826
+        "raw": 34049,
+        "gzip": 13005,
+        "brotli": 11794
       },
       "solidlil": {
-        "raw": 5653,
-        "gzip": 2488,
-        "brotli": 2199
+        "raw": 5387,
+        "gzip": 2444,
+        "brotli": 2174
       },
       "reduction": {
-        "raw": 83.77858762087864,
-        "gzip": 80.88800122906744,
-        "brotli": 81.40537798072044
+        "raw": 84.17868366178155,
+        "gzip": 81.20722798923491,
+        "brotli": 81.56689842292691
       }
     },
     {
@@ -170,19 +170,19 @@
       "title": "Show / Switch",
       "group": "control",
       "solid": {
-        "raw": 29653,
-        "gzip": 11165,
-        "brotli": 10167
+        "raw": 28842,
+        "gzip": 11105,
+        "brotli": 10076
       },
       "solidlil": {
-        "raw": 6291,
-        "gzip": 2709,
-        "brotli": 2380
+        "raw": 6022,
+        "gzip": 2660,
+        "brotli": 2372
       },
       "reduction": {
-        "raw": 78.78460863993524,
-        "gzip": 75.73667711598746,
-        "brotli": 76.59093144487066
+        "raw": 79.12072671798072,
+        "gzip": 76.04682575416479,
+        "brotli": 76.45891226677253
       }
     },
     {
@@ -190,19 +190,19 @@
       "title": "Repeat grid",
       "group": "control",
       "solid": {
-        "raw": 28868,
-        "gzip": 10972,
-        "brotli": 9971
+        "raw": 28205,
+        "gzip": 10910,
+        "brotli": 9910
       },
       "solidlil": {
-        "raw": 5243,
-        "gzip": 2293,
-        "brotli": 2019
+        "raw": 4994,
+        "gzip": 2251,
+        "brotli": 1974
       },
       "reduction": {
-        "raw": 81.83802133850631,
-        "gzip": 79.10134888807875,
-        "brotli": 79.75127870825393
+        "raw": 82.293919517816,
+        "gzip": 79.36755270394133,
+        "brotli": 80.08072653884965
       }
     },
     {
@@ -210,19 +210,19 @@
       "title": "Nested tree",
       "group": "control",
       "solid": {
-        "raw": 31367,
-        "gzip": 11834,
-        "brotli": 10744
+        "raw": 30493,
+        "gzip": 11738,
+        "brotli": 10648
       },
       "solidlil": {
-        "raw": 7699,
-        "gzip": 3259,
-        "brotli": 2933
+        "raw": 7386,
+        "gzip": 3191,
+        "brotli": 2864
       },
       "reduction": {
-        "raw": 75.45509612012624,
-        "gzip": 72.46070643907385,
-        "brotli": 72.70104244229337
+        "raw": 75.7780474207195,
+        "gzip": 72.81478957232919,
+        "brotli": 73.10293012772351
       }
     },
     {
@@ -230,19 +230,19 @@
       "title": "Error reset",
       "group": "control",
       "solid": {
-        "raw": 29880,
-        "gzip": 11275,
-        "brotli": 10284
+        "raw": 28987,
+        "gzip": 11196,
+        "brotli": 10179
       },
       "solidlil": {
-        "raw": 5980,
-        "gzip": 2592,
-        "brotli": 2307
+        "raw": 5621,
+        "gzip": 2484,
+        "brotli": 2209
       },
       "reduction": {
-        "raw": 79.98661311914323,
-        "gzip": 77.01108647450111,
-        "brotli": 77.56709451575261
+        "raw": 80.60854865974403,
+        "gzip": 77.81350482315112,
+        "brotli": 78.29845760880244
       }
     },
     {
@@ -250,19 +250,19 @@
       "title": "Todo list",
       "group": "apps",
       "solid": {
-        "raw": 31430,
-        "gzip": 11872,
-        "brotli": 10761
+        "raw": 30471,
+        "gzip": 11738,
+        "brotli": 10627
       },
       "solidlil": {
-        "raw": 7646,
-        "gzip": 3240,
-        "brotli": 2871
+        "raw": 7367,
+        "gzip": 3199,
+        "brotli": 2833
       },
       "reduction": {
-        "raw": 75.67292395800192,
-        "gzip": 72.7088948787062,
-        "brotli": 73.32032339001951
+        "raw": 75.8229135899708,
+        "gzip": 72.74663486113478,
+        "brotli": 73.34148866095794
       }
     },
     {
@@ -270,19 +270,19 @@
       "title": "Store cart",
       "group": "apps",
       "solid": {
-        "raw": 49837,
-        "gzip": 17893,
-        "brotli": 16105
+        "raw": 47303,
+        "gzip": 17492,
+        "brotli": 15813
       },
       "solidlil": {
-        "raw": 6972,
-        "gzip": 2965,
-        "brotli": 2643
+        "raw": 6690,
+        "gzip": 2926,
+        "brotli": 2623
       },
       "reduction": {
-        "raw": 86.01039388406204,
-        "gzip": 83.42927401777231,
-        "brotli": 83.58894753182243
+        "raw": 85.85713379701076,
+        "gzip": 83.27235307569174,
+        "brotli": 83.4123822171631
       }
     },
     {
@@ -290,19 +290,19 @@
       "title": "Kanban board",
       "group": "apps",
       "solid": {
-        "raw": 32227,
-        "gzip": 12045,
-        "brotli": 10899
+        "raw": 31281,
+        "gzip": 11916,
+        "brotli": 10835
       },
       "solidlil": {
-        "raw": 10300,
-        "gzip": 3840,
-        "brotli": 3434
+        "raw": 9944,
+        "gzip": 3763,
+        "brotli": 3381
       },
       "reduction": {
-        "raw": 68.03922177056505,
-        "gzip": 68.11955168119552,
-        "brotli": 68.4925222497477
+        "raw": 68.21073495092868,
+        "gzip": 68.42061094326955,
+        "brotli": 68.79556991232118
       }
     },
     {
@@ -310,19 +310,19 @@
       "title": "Inbox",
       "group": "apps",
       "solid": {
-        "raw": 33261,
-        "gzip": 12659,
-        "brotli": 11455
+        "raw": 32278,
+        "gzip": 12555,
+        "brotli": 11361
       },
       "solidlil": {
-        "raw": 9810,
-        "gzip": 4068,
-        "brotli": 3608
+        "raw": 9498,
+        "gzip": 4034,
+        "brotli": 3590
       },
       "reduction": {
-        "raw": 70.50599801569406,
-        "gzip": 67.86476024962478,
-        "brotli": 68.50283718900043
+        "raw": 70.57438503005142,
+        "gzip": 67.86937475109518,
+        "brotli": 68.4006689551976
       }
     },
     {
@@ -330,19 +330,19 @@
       "title": "Lil marketplace",
       "group": "apps",
       "solid": {
-        "raw": 34574,
-        "gzip": 13104,
-        "brotli": 11851
+        "raw": 33611,
+        "gzip": 12982,
+        "brotli": 11750
       },
       "solidlil": {
-        "raw": 11247,
-        "gzip": 4637,
-        "brotli": 4136
+        "raw": 10885,
+        "gzip": 4579,
+        "brotli": 4077
       },
       "reduction": {
-        "raw": 67.46977497541505,
-        "gzip": 64.61385836385836,
-        "brotli": 65.09999156189352
+        "raw": 67.6147689744429,
+        "gzip": 64.72808504082576,
+        "brotli": 65.30212765957447
       }
     },
     {
@@ -350,19 +350,19 @@
       "title": "Keyed table",
       "group": "performance",
       "solid": {
-        "raw": 32009,
-        "gzip": 12173,
-        "brotli": 11028
+        "raw": 31028,
+        "gzip": 12019,
+        "brotli": 10916
       },
       "solidlil": {
-        "raw": 9330,
-        "gzip": 3993,
-        "brotli": 3540
+        "raw": 9074,
+        "gzip": 3921,
+        "brotli": 3471
       },
       "reduction": {
-        "raw": 70.85194788965603,
-        "gzip": 67.19789698513104,
-        "brotli": 67.89989118607181
+        "raw": 70.75544669330927,
+        "gzip": 67.37665363174973,
+        "brotli": 68.20263832905826
       }
     },
     {
@@ -370,19 +370,19 @@
       "title": "Spreadsheet",
       "group": "performance",
       "solid": {
-        "raw": 30064,
-        "gzip": 11438,
-        "brotli": 10400
+        "raw": 29212,
+        "gzip": 11331,
+        "brotli": 10281
       },
       "solidlil": {
-        "raw": 6729,
-        "gzip": 2870,
-        "brotli": 2526
+        "raw": 6465,
+        "gzip": 2817,
+        "brotli": 2492
       },
       "reduction": {
-        "raw": 77.61774880255456,
-        "gzip": 74.90820073439413,
-        "brotli": 75.71153846153847
+        "raw": 77.86868410242366,
+        "gzip": 75.13899920571883,
+        "brotli": 75.76111273222449
       }
     },
     {
@@ -390,19 +390,19 @@
       "title": "SVG clock",
       "group": "visual",
       "solid": {
-        "raw": 27925,
-        "gzip": 10693,
-        "brotli": 9737
+        "raw": 27769,
+        "gzip": 10772,
+        "brotli": 9827
       },
       "solidlil": {
-        "raw": 4367,
-        "gzip": 2018,
-        "brotli": 1773
+        "raw": 4287,
+        "gzip": 1997,
+        "brotli": 1752
       },
       "reduction": {
-        "raw": 84.3616830796777,
-        "gzip": 81.12784064341157,
-        "brotli": 81.79110609017151
+        "raw": 84.56192156721524,
+        "gzip": 81.46119569253621,
+        "brotli": 82.17156812862521
       }
     },
     {
@@ -410,19 +410,19 @@
       "title": "Portal modal",
       "group": "visual",
       "solid": {
-        "raw": 28855,
-        "gzip": 10935,
-        "brotli": 9935
+        "raw": 28398,
+        "gzip": 10964,
+        "brotli": 9979
       },
       "solidlil": {
-        "raw": 5529,
-        "gzip": 2352,
-        "brotli": 2064
+        "raw": 5301,
+        "gzip": 2315,
+        "brotli": 2039
       },
       "reduction": {
-        "raw": 80.83867613931727,
-        "gzip": 78.49108367626886,
-        "brotli": 79.22496225465527
+        "raw": 81.33319247834353,
+        "gzip": 78.88544326887997,
+        "brotli": 79.56709089087083
       }
     }
   ],

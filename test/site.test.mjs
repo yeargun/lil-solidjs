@@ -54,6 +54,7 @@ test("the README leads with size and performance evidence", async () => {
   const evidence = readme.indexOf("paired browser demos")
   const install = readme.indexOf("npm install @itslil/solidjs")
   assert.ok(jfb > 0 && jfb < evidence && evidence < install)
+  assert.match(readme, /## Why smaller/)
   assert.match(readme, /raw \/ gzip-9 \/ Brotli-11/)
   assert.match(readme, /https:\/\/yeargun\.github\.io\/solidlil\//)
 })
@@ -79,6 +80,8 @@ test("the generated Pages artifact includes demos, sizes, and performance", asyn
   assert.match(html, /LSX/)
   assert.match(html, /@itslil\/solidjs/)
   assert.match(html, /js-framework-benchmark/)
+  assert.match(html, /id="why"/)
+  assert.match(html, /Why smaller/)
   assert.ok(results.jsFrameworkBenchmark)
   assert.ok(results.jsFrameworkBenchmark.sizes.solid.brotli > results.jsFrameworkBenchmark.sizes.solidlil.brotli)
   assert.ok(

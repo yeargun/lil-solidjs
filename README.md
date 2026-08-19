@@ -76,9 +76,21 @@ func()->void dispose = render("#app", (Element root) => {
 import { render, bindText, keyedEach, createIntSignal } from "@itslil/solidjs/web"
 ```
 
+## Why smaller
+
+The JFB cut is not “Vite property-mangled Solid harder.” Solid 2.0 already shortens internal keys when it publishes `@solidjs/signals`. Extra Terser `mangle.properties` on the keyed app saves a couple hundred Brotli bytes. The remaining gap is how the client is represented.
+
+**Owned fields become slots.** Solid’s graph is objects — [core.ts](https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/core.ts), [owner.ts](https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/owner.ts) — so a signal still has many named fields (`e.se`, `e.Ne`) after `^_` mangling. LilScript structs in [reactive.lil](https://github.com/yeargun/lil-solidjs/blob/main/src/reactive.lil) lower to `e[0]`, `e[1]` under [lilscript.closed.toml](https://github.com/yeargun/lil-solidjs/blob/main/src/lilscript.closed.toml) (`public_aggregate_abi = "positional"`). `extern class` DOM names stay. Terser cannot prove ownership.
+
+**Same templates, thinner For.** Both jumbotrons compile to `cloneNode` HTML. Solid JSX uses [`template().cloneNode`](https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-web/src/index.ts) and [`For`](https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid/src/client/flow.ts). LSX does the same in [lilx/lower.mjs](https://github.com/yeargun/lil-solidjs/blob/main/tooling/lilx/lower.mjs) → [web.lil](https://github.com/yeargun/lil-solidjs/blob/main/src/web.lil) `keyedEach` / [lsx.lil](https://github.com/yeargun/lil-solidjs/blob/main/src/lsx.lil). Compare [JFB Solid JSX](https://github.com/yeargun/lil-solidjs/blob/main/benchmarks/js-framework-benchmark/keyed/solid-v2/src/main.jsx) with [JFB LSX](https://github.com/yeargun/lil-solidjs/blob/main/benchmarks/js-framework-benchmark/keyed/solidlil/src/main.lilx).
+
+**Client-only graph.** We did not port Solid’s [hydration.ts](https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid/src/client/hydration.ts), [scheduler.ts](https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/scheduler.ts) transition lanes, or [async.ts](https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/async.ts) optimistic/pending rails. Host bindings are the small [host.lil](https://github.com/yeargun/lil-solidjs/blob/main/src/host.lil) surface.
+
+**Tooling.** [LilScript](https://github.com/yeargun/lilscript) types the program and searches JS against Brotli ([show-hn](https://github.com/yeargun/lilscript/blob/main/docs/show-hn.md), [mangle / ABI](https://github.com/yeargun/lilscript/blob/main/docs/configuration.md)). **LSX** (`.lilx`) is JSX for that language: [parse-jsx.mjs](https://github.com/yeargun/lil-solidjs/blob/main/tooling/lilx/parse-jsx.mjs) then `lower.mjs`. The [lab](https://yeargun.github.io/solidlil/) hero is official JFB. The 18 paired iframes are closed-world extras — they delete unused runtime per file and overstate the gap. `npm install @itslil/solidjs` is the reusable ESM vendor chunk, not those demos summed.
+
 ## What “smaller” means
 
-A normal client app vendors the framework once, then adds modules. The number on this page is that model: official js-framework-benchmark, Vite + terser, `sideEffects: false`. Official keyed Solid **1.9** is 11,563 B raw; Solid **2.0** is 33,701 B raw / 11,420 B Brotli-11; `@itslil/solidjs` LSX is 10,020 B raw / 3,609 B Brotli-11.
+A normal client app vendors the framework once, then adds modules. The number on this page is that model: official js-framework-benchmark. Official keyed Solid **1.9** is 11,563 B raw; Solid **2.0** is 33,701 B raw / 11,420 B Brotli-11; `@itslil/solidjs` LSX is 10,020 B raw / 3,609 B Brotli-11.
 
 The 18 lab demos are closed-world LSX builds of the same UI. They are not how a typical Solid or React app is shipped. Use the js-framework-benchmark keyed row.
 

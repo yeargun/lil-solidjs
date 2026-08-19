@@ -41,6 +41,7 @@ h1, h2 { margin: 0; letter-spacing: -.075em; line-height: .91; }
 h1 { font-size: clamp(70px, 9.2vw, 126px); font-weight: 800; }
 h1 em { color: var(--purple); font-style: normal; }
 .lede { max-width: 610px; margin: 32px 0 28px; color: var(--muted); font-size: 18px; line-height: 1.6; }
+.lede a { color: var(--purple); font-weight: 700; }
 .install-row { width: min(100%, 500px); display: flex; align-items: center; justify-content: space-between; background: #fff; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 6px 0 var(--ink); overflow: hidden; }
 .install-row code { padding: 17px 19px; font: 500 14px "DM Mono", monospace; }
 .copy { align-self: stretch; border: 0; border-left: 1px solid var(--line); padding: 0 18px; background: var(--acid); cursor: pointer; font: 500 11px "DM Mono", monospace; text-transform: uppercase; }
@@ -133,6 +134,23 @@ tbody td:last-child strong { color: var(--acid); }
 .method-note a { color: var(--acid); font: 500 11px "DM Mono", monospace; white-space: nowrap; }
 .perf-note { margin-top: 22px; color: var(--muted); font: 500 12px/1.6 "DM Mono", monospace; }
 
+.why { padding-block: 36px 100px; }
+.why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.why-grid article { border: 1px solid var(--ink); background: #fff; padding: 22px 22px 18px; }
+.why-grid h3 { margin: 0 0 12px; font-size: 20px; letter-spacing: -.04em; }
+.why-grid p { margin: 0 0 14px; color: var(--muted); font-size: 15px; line-height: 1.65; }
+.why-grid code { font: 500 12px "DM Mono", monospace; color: var(--ink); }
+.why-links { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+.why-links a { color: var(--purple); font: 500 11px/1.4 "DM Mono", monospace; }
+.why-links a:hover { text-decoration: underline; }
+.why-tooling { display: grid; grid-template-columns: 240px 1fr; gap: 48px; margin-top: 56px; align-items: start; }
+.why-tooling h3 { margin: 0; font-size: 28px; letter-spacing: -.05em; }
+.why-tooling ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 22px; }
+.why-tooling li { color: var(--muted); font-size: 15px; line-height: 1.65; }
+.why-tooling strong { color: var(--ink); }
+.why-tooling a { color: var(--purple); font-weight: 700; }
+.why-tooling code { font: 500 12px "DM Mono", monospace; color: var(--ink); }
+
 .closing { padding-block: 130px; text-align: center; }
 .closing h2 { font-size: clamp(60px, 8.5vw, 112px); }
 .install-row.large { margin: 48px auto 0; text-align: left; }
@@ -143,6 +161,7 @@ footer.shell { display: flex; justify-content: space-between; gap: 20px; padding
   .scoreboard { width: min(620px, calc(100% - 16px)); }
   .section-heading { grid-template-columns: 1fr; align-items: start; }
   .demo-grid { grid-template-columns: 1fr; }
+  .why-grid, .why-tooling { grid-template-columns: 1fr; }
   .perf-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
@@ -154,7 +173,7 @@ footer.shell { display: flex; justify-content: space-between; gap: 20px; padding
   h1 { font-size: clamp(62px, 22vw, 92px); }
   .score-main { padding: 27px; }
   .score-grid strong { font-size: 23px; }
-  .lab, .evidence, .performance { padding-block: 82px; }
+  .lab, .evidence, .performance, .why { padding-block: 82px; }
   .section-heading { margin-bottom: 38px; }
   .demo-frame-wrap { height: 300px; }
   .method-note { grid-template-columns: 1fr; }

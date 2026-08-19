@@ -156,13 +156,8 @@ for (const app of apps) {
     build: {
       outDir: join(solidDir, "solid-out"),
       emptyOutDir: true,
-      minify: "terser",
+      minify: "oxc",
       cssCodeSplit: false,
-      terserOptions: {
-        compress: { passes: 3, pure_getters: true },
-        mangle: true,
-        format: { comments: false },
-      },
       rollupOptions: {
         input: solidEntry,
         output: {
