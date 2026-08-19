@@ -1,4 +1,4 @@
-const data = await fetch("./results.json?v=jfb").then((response) => {
+const data = await fetch("./results.json?v=jfb2").then((response) => {
   if (!response.ok) throw new Error(`Unable to load results: ${response.status}`)
   return response.json()
 })
@@ -117,7 +117,7 @@ function renderResults() {
       <td>${formatter.format(example.solidlil.brotli)}</td>
       <td><strong>${pct(example.reduction.brotli)}</strong></td>
     </tr>
-  `)
+  `))
   rows.push(`
     <tr>
       <th scope="row">Total</th>

@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { spawnSync } from "node:child_process"
 import { readFile, stat } from "node:fs/promises"
 import { join, resolve, dirname } from "node:path"
 import test from "node:test"
@@ -55,6 +56,11 @@ test("the README leads with size and performance evidence", async () => {
   assert.ok(jfb > 0 && jfb < evidence && evidence < install)
   assert.match(readme, /raw \/ gzip-9 \/ Brotli-11/)
   assert.match(readme, /https:\/\/yeargun\.github\.io\/solidlil\//)
+})
+
+test("the lab app script parses", () => {
+  const checked = spawnSync(process.execPath, ["--check", join(root, "site", "app.js")], { encoding: "utf8" })
+  assert.equal(checked.status, 0, checked.stderr)
 })
 
 test("the generated Pages artifact includes demos, sizes, and performance", async () => {
