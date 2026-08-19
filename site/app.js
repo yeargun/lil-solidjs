@@ -43,7 +43,8 @@ document.querySelector("#score-wins").innerHTML = `${brotli.wins}<span>/${data.c
 document.querySelector("#score-demo-brotli").textContent = pct(brotli.weightedReduction)
 document.querySelector("#score-jfb-raw").textContent = pct(jfbRaw)
 
-const createRatio = jfb?.geomean?.cpu
+const createRatio = jfb?.geomean?.cpuSameApp
+  ?? jfb?.geomean?.cpu
   ?? data.performance?.browserMs?.ratio?.create1k
 document.querySelector("#score-jfb-cpu").textContent = createRatio == null
   ? (data.performance?.browserMs?.skipped ? "node only" : "—")
@@ -150,12 +151,13 @@ function renderPerf() {
           <span>${ms(item.solidlil)} / ${ms(item.solid)}</span>
         </article>
       `)
-      if (jfb.geomean?.cpu != null) {
+      const headline = jfb.geomean?.cpuSameApp ?? jfb.geomean?.cpu
+      if (headline != null) {
         items.push(`
           <article class="perf-card geo">
-            <span>CPU geomean</span>
-            <strong>${times(jfb.geomean.cpu)}</strong>
-            <span>vs Solid 2.0</span>
+            <span>CPU geomean · same app</span>
+            <strong>${times(headline)}</strong>
+            <span>8 workloads, select excluded</span>
           </article>
         `)
       }
@@ -164,8 +166,11 @@ function renderPerf() {
     for (const item of jfb.cpu) {
       rows.push(row(item.name, ms(item.solid), ms(item.solidlil), times(item.ratio)))
     }
+    if (jfb.geomean?.cpuSameApp != null) {
+      rows.push(row("JFB CPU geomean · same app", "1.00×", times(jfb.geomean.cpuSameApp), times(jfb.geomean.cpuSameApp)))
+    }
     if (jfb.geomean?.cpu != null) {
-      rows.push(row("JFB CPU geometric mean", "1.00×", times(jfb.geomean.cpu), times(jfb.geomean.cpu)))
+      rows.push(row("JFB CPU geomean · all nine", "1.00×", times(jfb.geomean.cpu), times(jfb.geomean.cpu)))
     }
     if (jfb.memory) {
       for (const item of jfb.memory) {
@@ -175,19 +180,10 @@ function renderPerf() {
   } else if (cards) {
     cards.innerHTML = ""
   }
-  if (perf) {
-    const nodeSolid = perf.nodeMs.solid
-    const nodeLil = perf.nodeMs.solidlil
-    const nodeRatio = perf.nodeMs.ratio ?? {}
-    rows.push(
-      row("Node 50k signal write+flush+read", ms(nodeSolid?.signal50k), ms(nodeLil.signal50k), times(nodeRatio.signal50k)),
-      row("Node 50k memo invalidate+read", ms(nodeSolid?.memo50k), ms(nodeLil.memo50k), times(nodeRatio.memo50k)),
-      row("Node 10k split effects", ms(nodeSolid?.effect10k), ms(nodeLil.effect10k), times(nodeRatio.effect10k)),
-    )
-  }
   if (jfb?.cpu) {
     document.querySelector("#perf-note").textContent =
-      `Official js-framework-benchmark, Chrome with CPU throttling, ${jfb.blocks ?? 15} blocks. Same keyed jumbotron table: Solid 2.0 JSX vs LSX, both compiled to cloneNode templates. Ratio is @lil/solidjs / Solid 2.0 (lower is faster). Highlighted cards are faster than Solid. Node graphs use @solidjs/signals@2.0.0-rc.0.`
+      jfb.notes?.cpuSameApp
+      ?? `Official js-framework-benchmark, Chrome with CPU throttling, ${jfb.blocks ?? 15} blocks. Ratio is @itslil/solidjs / Solid 2.0 (lower is faster). Same-app geomean excludes select.`
   } else {
     const browser = perf?.browserMs
     if (browser && !browser.skipped) {

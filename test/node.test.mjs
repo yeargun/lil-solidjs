@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { createRequire } from "node:module"
 import test from "node:test"
-import * as solidlil from "@lil/solidjs"
+import * as solidlil from "@itslil/solidjs"
 import * as core from "../dist/core.js"
 
 test("queued writes stay invisible until flush", () => {
@@ -111,7 +111,7 @@ test("public entries export createSelector", () => {
 
 test("CommonJS entry exposes the same public names", () => {
   const require = createRequire(import.meta.url)
-  const cjs = require("@lil/solidjs")
+  const cjs = require("@itslil/solidjs")
   for (const name of ["createSignal", "createMemo", "createEffect", "flush", "createRoot", "createStore"]) {
     assert.equal(typeof cjs[name], typeof solidlil[name], name)
   }

@@ -1,5 +1,5 @@
 {
-  "name": "@lil/solidjs",
+  "name": "@itslil/solidjs",
   "version": "0.1.0",
   "description": "Solid 2.0's client runtime, compiled with LilScript. Same queued writes, split effects, and LSX templates, shipped as a dependency-free package.",
   "keywords": [

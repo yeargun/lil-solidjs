@@ -1,10 +1,10 @@
-# @lil/solidjs
+# @itslil/solidjs
 
-Solid 2.0’s client runtime, compiled with LilScript and published as `@lil/solidjs`. Source: [github.com/yeargun/lil-solidjs](https://github.com/yeargun/lil-solidjs).
+Solid 2.0’s client runtime, compiled with LilScript and published as `@itslil/solidjs`. Source: [github.com/yeargun/lil-solidjs](https://github.com/yeargun/lil-solidjs).
 
 **Official js-framework-benchmark keyed table: 68.4% smaller Brotli (11,420 B → 3,609 B) and 0.92× CPU versus Solid 2.0.** 18/18 paired browser demos also ship smaller after Brotli (76.3% smaller in total). Solid 2.0 on one side, **LSX** (LilScript JSX) on the other. Live apps, raw / gzip-9 / Brotli-11 sizes, and measured performance are on the **[solidlil demo lab](https://yeargun.github.io/solidlil/)**.
 
-| Reproducible result | Solid 2.0 | `@lil/solidjs` | Ratio | Reduction |
+| Reproducible result | Solid 2.0 | `@itslil/solidjs` | Ratio | Reduction |
 | --- | ---: | ---: | ---: | ---: |
 | [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) keyed table, JS Brotli-11 | 11,420 B | 3,609 B | 0.316× | **68.4%** |
 | Same keyed table, raw JS | 33,701 B | 10,020 B | 0.297× | **70.3%** |
@@ -16,7 +16,7 @@ The keyed-table row is the fair app-sized comparison: both implementations are t
 
 Official [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) CPU, same machine, Chrome 151, 15 blocks, CPU throttling on. Same jumbotron table: Solid’s JSX and solidlil’s LSX both compile to `cloneNode` templates. Geometric mean of the nine keyed totals is **0.921×** Solid 2.0.
 
-| Keyed workload | Solid 2.0 | @lil/solidjs | Ratio |
+| Keyed workload | Solid 2.0 | @itslil/solidjs | Ratio |
 | --- | ---: | ---: | ---: |
 | Create 1,000 rows | 25.8 ms | 26.6 ms | 1.03× |
 | Replace 1,000 rows | 29.6 ms | 29.2 ms | **0.99×** |
@@ -34,11 +34,11 @@ Official [js-framework-benchmark](https://github.com/krausest/js-framework-bench
 | Memory after five create/clear cycles | 1.46 MB | 2.16 MB | 1.48× |
 
 ```sh
-npm install @lil/solidjs
+npm install @itslil/solidjs
 ```
 
 ```js
-import { createSignal, createMemo, createEffect, flush, createRoot } from "@lil/solidjs"
+import { createSignal, createMemo, createEffect, flush, createRoot } from "@itslil/solidjs"
 
 createRoot(() => {
   const [count, setCount] = createSignal(0)
@@ -56,9 +56,9 @@ createRoot(() => {
 
 ## Compatibility
 
-`@lil/solidjs` targets **Solid 2.0** (`solid-js@2.0.0-rc.0`, `@solidjs/web@2.0.0-rc.0`): queued writes until `flush()`, split `createEffect(compute, apply)`, `For` / `Repeat`, `Loading` / `Errored`, draft-first stores, `onSettled`, `isPending` / `latest`. There is no `batch`, `createResource`, or `startTransition`.
+`@itslil/solidjs` targets **Solid 2.0** (`solid-js@2.0.0-rc.0`, `@solidjs/web@2.0.0-rc.0`): queued writes until `flush()`, split `createEffect(compute, apply)`, `For` / `Repeat`, `Loading` / `Errored`, draft-first stores, `onSettled`, `isPending` / `latest`. There is no `batch`, `createResource`, or `startTransition`.
 
-LilScript apps are written in **LSX** (`.lilx`) — JSX for LilScript — and compile closed-world (`import … from "solidlil"`). JavaScript consumers use the tuple helpers on the default entry. A DOM app should import only from `@lil/solidjs/web` so it shares one reactive graph; mixing `@lil/solidjs` with `@lil/solidjs/web` duplicates the runtime.
+LilScript apps are written in **LSX** (`.lilx`) — JSX for LilScript — and compile closed-world (`import … from "solidlil"`). JavaScript consumers use the tuple helpers on the default entry. A DOM app should import only from `@itslil/solidjs/web` so it shares one reactive graph; mixing `@itslil/solidjs` with `@itslil/solidjs/web` duplicates the runtime.
 
 ```lil
 import { Signal, append, createIntSignal, render } from "solidlil";
@@ -75,7 +75,7 @@ func()->void dispose = render("#app", (Element root) => {
 ```
 
 ```js
-import { render, bindText, keyedEach, createIntSignal } from "@lil/solidjs/web"
+import { render, bindText, keyedEach, createIntSignal } from "@itslil/solidjs/web"
 ```
 
 ## What “smaller” means
