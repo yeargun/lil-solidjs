@@ -1,10 +1,11 @@
-import { dirname, resolve } from "node:path"
+import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { brotliCompressSync, constants, gzipSync } from "node:zlib"
 import { build } from "esbuild"
 import { minify } from "terser"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+const entries = join(root, "scripts", "runtime-entries")
 
 function bytesOf(source) {
   const input = Buffer.isBuffer(source) ? source : Buffer.from(source)
@@ -14,6 +15,14 @@ function bytesOf(source) {
     brotli: brotliCompressSync(input, {
       params: { [constants.BROTLI_PARAM_QUALITY]: 11 },
     }).length,
+  }
+}
+
+function reduction(solid, lil) {
+  return {
+    raw: (1 - lil.raw / solid.raw) * 100,
+    gzip: (1 - lil.gzip / solid.gzip) * 100,
+    brotli: (1 - lil.brotli / solid.brotli) * 100,
   }
 }
 
@@ -28,13 +37,10 @@ async function minifyCode(code) {
   return result.code
 }
 
-async function bundle(contents) {
+async function vendor(entry) {
   const built = await build({
-    stdin: {
-      contents,
-      resolveDir: root,
-      loader: "js",
-    },
+    entryPoints: [join(entries, entry)],
+    absWorkingDir: root,
     bundle: true,
     format: "esm",
     platform: "browser",
@@ -45,33 +51,21 @@ async function bundle(contents) {
     minify: false,
     write: false,
   })
-  return minifyCode(built.outputFiles[0].text)
-}
-
-function reduction(solid, lil) {
-  return {
-    raw: (1 - lil.raw / solid.raw) * 100,
-    gzip: (1 - lil.gzip / solid.gzip) * 100,
-    brotli: (1 - lil.brotli / solid.brotli) * 100,
-  }
+  return bytesOf(await minifyCode(built.outputFiles[0].text))
 }
 
 export async function measureRuntime() {
-  const solidClient = bytesOf(await bundle(`
-export * from "solid-js"
-export * from "@solidjs/web"
-`))
-  const lilWeb = bytesOf(await bundle(`
-export * from "@itslil/solidjs/web"
-`))
-  const lilFull = bytesOf(await bundle(`
-export * from "@itslil/solidjs/full"
-`))
+  const solidClient = await vendor("solid.js")
+  const lilWeb = await vendor("solidlil.js")
+  if (solidClient.brotli > 20000) {
+    throw new Error(
+      `Solid runtime Brotli ${solidClient.brotli} B is not a real Vite client. export * from solid-js keeps unused @solidjs/signals modules.`,
+    )
+  }
   return {
-    method: "Vendor the whole client once. esbuild browser bundle of every export from solid-js + @solidjs/web versus @itslil/solidjs/web, then terser (3 passes). That is the runtime tax a Vite/React/Solid app pays before app modules.",
+    method: "esbuild browser bundle + terser of the named DOM APIs a Vite Solid app actually vendors (createSignal, createMemo, createEffect, createRoot, flush, For, Show, render). Not export * — that keeps unused @solidjs/signals and is ~35 kB Brotli, which no real Solid 2.0 app ships. Lil is the published @itslil/solidjs/web graph.",
     solid: solidClient,
     solidlil: lilWeb,
-    full: lilFull,
     reduction: reduction(solidClient, lilWeb),
   }
 }

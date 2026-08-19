@@ -6,7 +6,7 @@
     "brotli": 11
   },
   "solid": "solid-js@2.0.0-rc.0 + @solidjs/web@2.0.0-rc.0",
-  "solidlil": "whole-client vendor chunk versus Solid 2.0, plus closed-world LSX demos",
+  "solidlil": "official JFB keyed table versus Solid 2.0, plus closed-world LSX demos",
   "cases": 18,
   "metrics": {
     "raw": {
@@ -566,28 +566,5 @@
         "ratio": 1.4808186412611586
       }
     ]
-  },
-  "runtime": {
-    "method": "Vendor the whole client once. esbuild browser bundle of every export from solid-js + @solidjs/web versus @itslil/solidjs/web, then terser (3 passes). That is the runtime tax a Vite/React/Solid app pays before app modules.",
-    "solid": {
-      "raw": 111401,
-      "gzip": 39088,
-      "brotli": 35095
-    },
-    "solidlil": {
-      "raw": 11786,
-      "gzip": 4562,
-      "brotli": 4047
-    },
-    "full": {
-      "raw": 13465,
-      "gzip": 5137,
-      "brotli": 4594
-    },
-    "reduction": {
-      "raw": 89.42020269117872,
-      "gzip": 88.32889889480148,
-      "brotli": 88.46844279811938
-    }
   }
 }
