@@ -1007,9 +1007,8 @@ function lowerFor(node, context, parentVariable, namespace = "html") {
     };
   }
   if (customKey) {
-    const parameters = parsed.hasIndex
-      ? `${parsed.typeName} ${parsed.item}, Signal<int> ${parsed.index}`
-      : `${parsed.typeName} ${parsed.item}`;
+    const indexName = parsed.hasIndex ? parsed.index : "_index";
+    const parameters = `${parsed.typeName} ${parsed.item}, Signal<int> ${indexName}`;
     return {
       varName: parentVariable,
       code: [
@@ -1292,9 +1291,9 @@ function lowerDynamicUpdate(variable, property) {
   if (property.name === "checked") {
     return [`boolProperty(${variable}, "checked", ${property.value.trim()});`];
   }
-  if (property.name === "value") {
+  if (property.name === "value" || property.name === "textContent") {
     return [
-      `stringProperty(${variable}, "value", "" + (${property.value.trim()}));`,
+      `stringProperty(${variable}, "${property.name}", "" + (${property.value.trim()}));`,
     ];
   }
   if (BOOLEAN_ATTRIBUTES.has(property.name)) {

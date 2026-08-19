@@ -1,0 +1,84 @@
+import { Signal, append, createIntSignal, createSignal, createStringSignal, render } from "solidlil";
+
+class Card {
+  int id;
+  string title;
+  Signal<string> lane;
+
+  init(int id, string title, string lane) {
+    this.id = id;
+    this.title = title;
+    this.lane = createStringSignal(lane);
+  }
+}
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<int> nextId = createIntSignal(6);
+  Signal<Card[]> cards = createSignal([], (Card[] a, Card[] b) => false);
+  cards.write([
+    new Card(1, "Port For", "todo"),
+    new Card(2, "Selector notify", "todo"),
+    new Card(3, "JFB clear", "todo"),
+    new Card(4, "Dispose leak", "doing"),
+    new Card(5, "Package graph", "done")
+  ]);
+
+  Element view = (
+    <div class="stack">
+      <h2>Kanban</h2>
+      <p class="muted">One keyed list. Each card has a lane signal; columns are Show filters over the same cards.</p>
+      <div class="board">
+        <div class="lane">
+          <h3>Todo</h3>
+          <For each={cards} keyed={(Card card) => card.id}>
+            {(Card card) => (
+              <Show when={card.lane.read() == "todo"}>
+                <div class="card-item">
+                  <span>{card.title}</span>
+                  <button onClick={() => { card.lane.write("doing"); }}>Start</button>
+                </div>
+              </Show>
+            )}
+          </For>
+          <button class="primary" onClick={() => {
+            int id = nextId.read();
+            nextId.write(id + 1);
+            Card[] current = cards.read().slice();
+            current.push(new Card(id, "Card " + id, "todo"));
+            cards.write(current);
+          }}>Add</button>
+        </div>
+        <div class="lane">
+          <h3>Doing</h3>
+          <For each={cards} keyed={(Card card) => card.id}>
+            {(Card card) => (
+              <Show when={card.lane.read() == "doing"}>
+                <div class="card-item">
+                  <span>{card.title}</span>
+                  <div class="row">
+                    <button onClick={() => { card.lane.write("todo"); }}>Back</button>
+                    <button onClick={() => { card.lane.write("done"); }}>Done</button>
+                  </div>
+                </div>
+              </Show>
+            )}
+          </For>
+        </div>
+        <div class="lane">
+          <h3>Done</h3>
+          <For each={cards} keyed={(Card card) => card.id}>
+            {(Card card) => (
+              <Show when={card.lane.read() == "done"}>
+                <div class="card-item">
+                  <span>{card.title}</span>
+                  <button onClick={() => { card.lane.write("doing"); }}>Reopen</button>
+                </div>
+              </Show>
+            )}
+          </For>
+        </div>
+      </div>
+    </div>
+  );
+  append(root, view);
+});

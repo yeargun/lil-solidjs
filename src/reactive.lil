@@ -8,6 +8,8 @@ export extern class ObjectCtor {
 
 export extern ObjectCtor Object;
 
+void noop() {}
+
 class Cleanup {
   func()->void callback;
 
@@ -17,19 +19,25 @@ class Cleanup {
 
   void run() {
     func()->void callback = this.callback;
+    this.callback = noop;
     callback();
   }
 }
 
 class Unsub {
   func()->void callback;
+  int sourceId;
+  int generation;
 
-  init(func()->void callback) {
+  init(func()->void callback, int sourceId, int generation) {
     this.callback = callback;
+    this.sourceId = sourceId;
+    this.generation = generation;
   }
 
   void run() {
     func()->void callback = this.callback;
+    this.callback = noop;
     callback();
   }
 }
@@ -43,6 +51,7 @@ class PendingWrite {
 
   void run() {
     func()->void apply = this.apply;
+    this.apply = noop;
     apply();
   }
 }
@@ -80,6 +89,8 @@ export class Owner {
   }
 }
 
+int nextSourceId = 1;
+
 export class Effect {
   int id;
   int parentKind;
@@ -92,6 +103,7 @@ export class Effect {
   bool disposed;
   bool queued;
   int kind;
+  int generation;
 
   init(
     int id,
@@ -111,6 +123,7 @@ export class Effect {
     this.disposed = false;
     this.queued = false;
     this.kind = kind;
+    this.generation = 0;
   }
 }
 
@@ -120,6 +133,7 @@ Effect[] effects = [];
 int[] freeEffectIds = [];
 
 export class Signal<T> {
+  int id;
   T committed;
   T pending;
   bool hasPending;
@@ -128,6 +142,8 @@ export class Signal<T> {
   int[] observerIds;
 
   init(T initial, func(T, T)->bool equals) {
+    this.id = nextSourceId;
+    nextSourceId += 1;
     this.committed = initial;
     this.pending = initial;
     this.hasPending = false;
@@ -137,13 +153,22 @@ export class Signal<T> {
   }
 
   void subscribe(int effectId) {
+    Effect effect = effects[effectId];
+    int gen = effect.generation;
     for (int index = 0; index < this.observerIds.length; index++) {
       if (this.observerIds[index] == effectId) {
+        Unsub[] unsubs = effect.unsubs;
+        for (int cursor = 0; cursor < unsubs.length; cursor++) {
+          if (unsubs[cursor].sourceId == this.id) {
+            unsubs[cursor].generation = gen;
+            return;
+          }
+        }
         return;
       }
     }
     this.observerIds.push(effectId);
-    effects[effectId].unsubs.push(new Unsub(() => this.unsubscribe(effectId)));
+    effect.unsubs.push(new Unsub(() => this.unsubscribe(effectId), this.id, gen));
   }
 
   void unsubscribe(int effectId) {
@@ -317,6 +342,7 @@ void disposeEffect(int effectId) {
   }
   effect.disposed = true;
   effect.queued = false;
+  effect.callback = noop;
   runUnsubs(effect.unsubs);
   while (effect.childEffectIds.length > 0) {
     int index = effect.childEffectIds.length - 1;
@@ -334,9 +360,22 @@ void disposeEffect(int effectId) {
   freeEffectIds.push(effectId);
 }
 
+void sweepUnsubs(Effect effect) {
+  int gen = effect.generation;
+  Unsub[] live = [];
+  for (int index = 0; index < effect.unsubs.length; index++) {
+    Unsub unsub = effect.unsubs[index];
+    if (unsub.generation == gen) {
+      live.push(unsub);
+    } else {
+      unsub.run();
+    }
+  }
+  effect.unsubs = live;
+}
+
 void resetEffect(int effectId) {
   Effect effect = effects[effectId];
-  runUnsubs(effect.unsubs);
   while (effect.childEffectIds.length > 0) {
     int index = effect.childEffectIds.length - 1;
     int child = effect.childEffectIds[index];
@@ -362,6 +401,7 @@ void runEffect(int effectId) {
     return;
   }
   resetEffect(effectId);
+  effect.generation += 1;
   int previousListener = activeListenerId;
   int previousEffect = activeEffectId;
   int previousOwner = activeOwnerId;
@@ -376,6 +416,7 @@ void runEffect(int effectId) {
     activeEffectId = previousEffect;
     activeOwnerId = previousOwner;
   }
+  sweepUnsubs(effect);
 }
 
 void drainQueue(int[] queue) {
@@ -427,7 +468,11 @@ int allocOwner(int parentKind, int parentId) {
   if (freeOwnerIds.length > 0) {
     id = freeOwnerIds[freeOwnerIds.length - 1];
     freeOwnerIds.pop();
-    owners[id] = new Owner(id, parentKind, parentId);
+    Owner owner = owners[id];
+    owner.id = id;
+    owner.parentKind = parentKind;
+    owner.parentId = parentId;
+    owner.disposed = false;
   } else {
     id = owners.length;
     owners.push(new Owner(id, parentKind, parentId));
@@ -451,7 +496,15 @@ int allocEffect(func()->void callback, int kind) {
   if (freeEffectIds.length > 0) {
     id = freeEffectIds[freeEffectIds.length - 1];
     freeEffectIds.pop();
-    effects[id] = new Effect(id, parentKind, parentId, callback, kind);
+    Effect effect = effects[id];
+    effect.id = id;
+    effect.parentKind = parentKind;
+    effect.parentId = parentId;
+    effect.callback = callback;
+    effect.kind = kind;
+    effect.disposed = false;
+    effect.queued = false;
+    effect.generation = 0;
   } else {
     id = effects.length;
     effects.push(new Effect(id, parentKind, parentId, callback, kind));
@@ -550,6 +603,105 @@ export void createRenderBind<T>(func()->T compute, func(T)->void apply) {
     apply(value);
     activeListenerId = previousListener;
   });
+}
+
+export class Selector {
+  int id;
+  int current;
+  Map<int, int[]> watchers;
+
+  init(int current) {
+    this.id = nextSourceId;
+    nextSourceId += 1;
+    this.current = current;
+    this.watchers = new Map<int, int[]>();
+  }
+
+  void watch(int value, int effectId) {
+    Effect effect = effects[effectId];
+    int gen = effect.generation;
+    int[]? existing = this.watchers.get(value);
+    if (existing != null) {
+      for (int index = 0; index < existing.length; index++) {
+        if (existing[index] == effectId) {
+          Unsub[] unsubs = effect.unsubs;
+          for (int cursor = 0; cursor < unsubs.length; cursor++) {
+            if (unsubs[cursor].sourceId == this.id) {
+              unsubs[cursor].generation = gen;
+              return;
+            }
+          }
+          return;
+        }
+      }
+      existing.push(effectId);
+    } else {
+      int[] created = [];
+      created.push(effectId);
+      this.watchers.set(value, created);
+    }
+    Selector selector = this;
+    effect.unsubs.push(new Unsub(() => selector.unwatch(value, effectId), this.id, gen));
+  }
+
+  void unwatch(int value, int effectId) {
+    int[]? list = this.watchers.get(value);
+    if (list == null) {
+      return;
+    }
+    for (int index = 0; index < list.length; index++) {
+      if (list[index] == effectId) {
+        int last = list.length - 1;
+        list[index] = list[last];
+        list.pop();
+        if (list.length == 0) {
+          this.watchers.delete(value);
+        }
+        return;
+      }
+    }
+  }
+
+  void notifyKey(int value) {
+    int[]? list = this.watchers.get(value);
+    if (list == null) {
+      return;
+    }
+    int[] snapshot = [];
+    for (int index = 0; index < list.length; index++) {
+      snapshot.push(list[index]);
+    }
+    notifyObservers(snapshot);
+  }
+
+  void change(int next) {
+    if (this.current == next) {
+      return;
+    }
+    int previous = this.current;
+    this.current = next;
+    this.notifyKey(previous);
+    this.notifyKey(next);
+  }
+
+  bool match(int value) {
+    if (activeListenerId >= 0) {
+      this.watch(value, activeListenerId);
+    }
+    return this.current == value;
+  }
+}
+
+export Selector createSelector(Signal<int> source) {
+  Selector selector = new Selector(source.peek());
+  createRenderEffect(() => {
+    selector.change(source.read());
+  });
+  return selector;
+}
+
+export bool selectorMatch(Selector selector, int value) {
+  return selector.match(value);
 }
 
 export Signal<T> createMemo<T>(T seed, func()->T compute, func(T, T)->bool equals) {

@@ -1,0 +1,116 @@
+import { Signal, append, createIntMemo, createIntSignal, render } from "solidlil";
+
+int ROWS = 8;
+int COLS = 6;
+
+class Cell {
+  Signal<int> value;
+
+  init(int value) {
+    this.value = createIntSignal(value);
+  }
+}
+
+Cell[] makeCells() {
+  Cell[] cells = [];
+  int count = ROWS * COLS;
+  for (int index = 0; index < count; index++) {
+    cells.push(new Cell(0));
+  }
+  return cells;
+}
+
+Signal<int>[] makeSums(Cell[] cells) {
+  Signal<int>[] sums = [];
+  for (int column = 0; column < COLS; column++) {
+    sums.push(columnSum(cells, column));
+  }
+  return sums;
+}
+
+Signal<int> columnSum(Cell[] cells, int column) {
+  return createIntMemo(() => {
+    int total = 0;
+    for (int row = 0; row < ROWS; row++) {
+      total += cells[row * COLS + column].value.read();
+    }
+    return total;
+  });
+}
+
+string selectedLabel(Cell[] cells, Signal<int> selected) {
+  int index = selected.read();
+  int row = index / COLS;
+  int column = index % COLS;
+  return "R" + (row + 1) + "C" + (column + 1) + " = " + cells[index].value.read();
+}
+
+func()->void dispose = render("#app", (Element root) => {
+  Cell[] cells = makeCells();
+  Signal<int>[] sums = makeSums(cells);
+  Signal<int> selected = createIntSignal(0);
+  Signal<int> rowCount = createIntSignal(ROWS);
+  Signal<int> colCount = createIntSignal(COLS);
+
+  Element view = (
+    <div class="stack">
+      <h2>Spreadsheet</h2>
+      <p class="muted">8×6 independent cells. Column totals are memos. Click a cell, then +1 / +10.</p>
+      <div class="row">
+        <span>{selectedLabel(cells, selected)}</span>
+        <button class="primary" onClick={() => {
+          Cell cell = cells[selected.read()];
+          cell.value.write(cell.value.read() + 1);
+        }}>+1</button>
+        <button onClick={() => {
+          Cell cell = cells[selected.read()];
+          cell.value.write(cell.value.read() + 10);
+        }}>+10</button>
+        <button onClick={() => {
+          cells[selected.read()].value.write(0);
+        }}>Zero</button>
+      </div>
+      <table class="sheet">
+        <thead>
+          <tr>
+            <th />
+            <Repeat count={colCount.read()}>
+              {(int column) => <th>{columnHeader(column)}</th>}
+            </Repeat>
+          </tr>
+        </thead>
+        <tbody>
+          <Repeat count={rowCount.read()}>
+            {(int row) => (
+              <tr>
+                <th>{row + 1}</th>
+                <Repeat count={colCount.read()}>
+                  {(int column) => (
+                    <td
+                      class={{ sel: selected.read() == row * COLS + column }}
+                      onClick={() => { selected.write(row * COLS + column); }}
+                    >
+                      {cells[row * COLS + column].value.read()}
+                    </td>
+                  )}
+                </Repeat>
+              </tr>
+            )}
+          </Repeat>
+          <tr>
+            <th>Σ</th>
+            <Repeat count={colCount.read()}>
+              {(int column) => <td>{sums[column].read()}</td>}
+            </Repeat>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  );
+  append(root, view);
+});
+
+string columnHeader(int column) {
+  string[] letters = ["A", "B", "C", "D", "E", "F"];
+  return letters[column];
+}

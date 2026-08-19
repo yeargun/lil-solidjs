@@ -1,5 +1,6 @@
 export * from "./index"
 
+export function createSignal<T>(initial: T, equals: (previous: T, next: T) => boolean): unknown
 export function render(selector: string, app: (root: Element) => void): () => void
 export function renderNode(mount: Element, app: (root: Element) => void): () => void
 export function element(tag: string): Element
@@ -17,6 +18,11 @@ export function keyedEach<T>(
   parent: Element,
   items: () => T[],
   keyOf: (item: T) => number,
+  createRow: (item: T, index: unknown) => Element,
+): void
+export function identityEach<T>(
+  parent: Element,
+  items: () => T[],
   createRow: (item: T, index: unknown) => Element,
 ): void
 export function indexEach<T>(

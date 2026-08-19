@@ -11,6 +11,7 @@ import {
   untrack
 } from "./reactive";
 import {
+  DomPointerEvent,
   Element,
   Math,
   document
@@ -21,9 +22,11 @@ import {
   comment,
   element,
   firstChild,
+  identityEach,
   indexEach,
   insertBefore,
   keyedEach,
+  keyedEachPlain,
   delay,
   every,
   hostDocument,
@@ -141,7 +144,9 @@ export void boolProperty(Element node, string name, bool value) {
 }
 
 export void classToggle(Element node, string name, bool value) {
-  node.classList.toggle(name, value);
+  if (node.classList.contains(name) != value) {
+    node.classList.toggle(name, value);
+  }
 }
 
 export void dynamicText(Element parent, func()->string value) {
@@ -395,7 +400,7 @@ export void dynamicKeyedValue<T>(
   func(T)->int keyOf,
   func(T)->Element children
 ) {
-  keyedEach(parent, () => each.read(), keyOf, (T item, Signal<int> index) => children(item));
+  keyedEachPlain(parent, () => each.read(), keyOf, children);
 }
 
 export void dynamicKeyedNodes<T>(
@@ -539,12 +544,47 @@ export void onEvent(Element node, string event, func()->void callback) {
   onCleanup(() => node.removeEventListener(event, wrapped));
 }
 
+bool clickDelegateBound = false;
+
+void emptyClick() {}
+
+void clickDelegate(DomPointerEvent event) {
+  Element? node = event.target;
+  while (node != null) {
+    Element current = node;
+    if (current.hasClickAction) {
+      current.clickAction();
+      flush();
+      return;
+    }
+    node = current.parentNode;
+  }
+}
+
+void ensureClickDelegate() {
+  if (clickDelegateBound) {
+    return;
+  }
+  clickDelegateBound = true;
+  document.addEventListener("click", clickDelegate);
+}
+
 export void onDelegatedEventVoid(Element node, string event, func()->void callback) {
+  if (event == "click") {
+    onDelegatedClickVoid(node, callback);
+    return;
+  }
   onEvent(node, event, callback);
 }
 
 export void onDelegatedClickVoid(Element node, func()->void callback) {
-  onEvent(node, "click", callback);
+  ensureClickDelegate();
+  node.hasClickAction = true;
+  node.clickAction = callback;
+  onCleanup(() => {
+    node.hasClickAction = false;
+    node.clickAction = emptyClick;
+  });
 }
 
 export class DomEvent {
@@ -576,91 +616,3 @@ export void onDelegatedEvent(Element node, string event, func(DomEvent)->void ca
   onCleanup(() => node.removeEventListener(event, wrapped));
 }
 
-class IdentityRow<T> {
-  T item;
-  Element node;
-  Signal<int> index;
-  func()->void dispose;
-
-  init(T item, Element node, Signal<int> index, func()->void dispose) {
-    this.item = item;
-    this.node = node;
-    this.index = index;
-    this.dispose = dispose;
-  }
-}
-
-class IdentityTable<T> {
-  IdentityRow<T>[] order;
-
-  init() {
-    this.order = [];
-  }
-}
-
-void identityEach<T>(
-  Element parent,
-  func()->T[] items,
-  func(T, Signal<int>)->Element createRow
-) {
-  Element marker = comment();
-  append(parent, marker);
-  IdentityTable<T> holder = new IdentityTable();
-  func(T[])->void reconcile = (T[] nextItems) => {
-    IdentityRow<T>[] previous = holder.order;
-    IdentityRow<T>[] nextRows = [];
-    for (int index = 0; index < nextItems.length; index++) {
-      T item = nextItems[index];
-      IdentityRow<T>? matched = null;
-      for (int cursor = 0; cursor < previous.length; cursor++) {
-        IdentityRow<T> candidate = previous[cursor];
-        if (candidate.item == item) {
-          matched = candidate;
-          int last = previous.length - 1;
-          previous[cursor] = previous[last];
-          previous.pop();
-          break;
-        }
-      }
-      if (matched != null) {
-        matched.index.write(index);
-        nextRows.push(matched);
-      } else {
-        createRoot((func()->void innerDispose) => {
-          Signal<int> indexSignal = createIntSignal(index);
-          Element node = createRow(item, indexSignal);
-          nextRows.push(new IdentityRow(item, node, indexSignal, innerDispose));
-          return innerDispose;
-        });
-      }
-    }
-    while (previous.length > 0) {
-      IdentityRow<T> leftover = previous[previous.length - 1];
-      previous.pop();
-      leftover.dispose();
-      removeNode(leftover.node);
-    }
-    Element? cursor = marker.nextSibling;
-    for (int index = 0; index < nextRows.length; index++) {
-      IdentityRow<T> row = nextRows[index];
-      if (row.node != cursor) {
-        insertBefore(parent, row.node, cursor);
-      }
-      cursor = row.node.nextSibling;
-    }
-    holder.order = nextRows;
-  };
-  createRenderEffect(() => {
-    T[] nextItems = items();
-    untrack(() => reconcile(nextItems));
-  });
-  onCleanup(() => {
-    while (holder.order.length > 0) {
-      IdentityRow<T> leftover = holder.order[holder.order.length - 1];
-      holder.order.pop();
-      leftover.dispose();
-      removeNode(leftover.node);
-    }
-    removeNode(marker);
-  });
-}

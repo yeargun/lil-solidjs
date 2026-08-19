@@ -7,12 +7,16 @@ import {
   createRenderBind,
   createRenderEffect,
   createRoot,
+  createSelector,
   createSignal,
   createStringSignal,
   enablePendingThrows,
   flush,
   onCleanup,
   provideContext,
+  selectorMatch,
+  signalGet,
+  signalSet,
   untrack
 } from "./reactive";
 import {
@@ -23,6 +27,45 @@ import {
   document,
   window
 } from "./host";
+
+export {
+  createIntSignal,
+  createRenderEffect,
+  createRoot,
+  createSelector,
+  createSignal,
+  createStringSignal,
+  flush,
+  onCleanup,
+  selectorMatch,
+  signalGet,
+  signalSet,
+  untrack
+};
+
+void emptyDispose() {}
+
+void wipeAfterMarker(Element marker) {
+  Element? host = marker.parentNode;
+  if (host == null) {
+    return;
+  }
+  host.removeChild(marker);
+  host.textContent = "";
+  host.appendChild(marker);
+}
+
+void appendNodes(Element parent, Element marker, Element[] nodes) {
+  if (nodes.length == 0) {
+    return;
+  }
+  Element fragment = document.createDocumentFragment();
+  for (int index = 0; index < nodes.length; index++) {
+    fragment.appendChild(nodes[index]);
+  }
+  Element? after = marker.nextSibling;
+  parent.insertBefore(fragment, after);
+}
 
 export Element prepareTemplate(string html) {
   Element template = document.createElement("template");
@@ -96,6 +139,19 @@ export void clear(Element parent) {
 }
 
 export void setText(Element node, string value) {
+  if (node.nodeType == 3) {
+    if (node.textContent != value) {
+      node.textContent = value;
+    }
+    return;
+  }
+  Element? child = node.firstChild;
+  if (child != null && child.nodeType == 3 && child.nextSibling == null) {
+    if (child.textContent != value) {
+      child.textContent = value;
+    }
+    return;
+  }
   if (node.textContent != value) {
     node.textContent = value;
   }
@@ -167,16 +223,16 @@ export func()->void render(string selector, func(Element)->void app) {
   }
   Element mount = root;
   return createRoot((func()->void dispose) => {
-    onCleanup(() => clear(mount));
     app(mount);
+    onCleanup(() => clear(mount));
     return dispose;
   });
 }
 
 export func()->void renderNode(Element mount, func(Element)->void app) {
   return createRoot((func()->void dispose) => {
-    onCleanup(() => clear(mount));
     app(mount);
+    onCleanup(() => clear(mount));
     return dispose;
   });
 }
@@ -268,6 +324,95 @@ export void switchIndex(
   });
 }
 
+void reorderNodes(Element parent, Element marker, Element[] previous, Element[] next) {
+  int aStart = 0;
+  int bStart = 0;
+  int aEnd = previous.length;
+  int bEnd = next.length;
+  while (true) {
+    if (aStart >= aEnd) {
+      break;
+    }
+    if (bStart >= bEnd) {
+      break;
+    }
+    if (previous[aStart] != next[bStart]) {
+      break;
+    }
+    aStart += 1;
+    bStart += 1;
+  }
+  while (true) {
+    if (aEnd <= aStart) {
+      break;
+    }
+    if (bEnd <= bStart) {
+      break;
+    }
+    if (previous[aEnd - 1] != next[bEnd - 1]) {
+      break;
+    }
+    aEnd -= 1;
+    bEnd -= 1;
+  }
+  int remaining = aEnd - aStart;
+  bool swappedEnds = false;
+  if (remaining == bEnd - bStart) {
+    if (remaining >= 2) {
+      if (previous[aStart] == next[bEnd - 1]) {
+        if (previous[aEnd - 1] == next[bStart]) {
+          swappedEnds = true;
+        }
+      }
+    }
+  }
+  if (swappedEnds) {
+    bool middleSame = true;
+    int offset = 1;
+    while (aStart + offset < aEnd - 1) {
+      if (previous[aStart + offset] != next[bStart + offset]) {
+        middleSame = false;
+        break;
+      }
+      offset += 1;
+    }
+    if (middleSame) {
+      Element first = previous[aStart];
+      Element last = previous[aEnd - 1];
+      parent.insertBefore(last, first);
+      Element? afterTail = null;
+      if (bEnd < next.length) {
+        afterTail = next[bEnd];
+      }
+      parent.insertBefore(first, afterTail);
+      return;
+    }
+  }
+  Element? cursor = marker.nextSibling;
+  if (bStart > 0) {
+    cursor = next[bStart - 1].nextSibling;
+  }
+  int index = bStart;
+  while (index < bEnd) {
+    Element node = next[index];
+    if (node != cursor) {
+      parent.insertBefore(node, cursor);
+    }
+    cursor = node.nextSibling;
+    index += 1;
+  }
+}
+
+Element[] liveSiblings(Element marker) {
+  Element[] nodes = [];
+  Element? cursor = marker.nextSibling;
+  while (cursor != null) {
+    nodes.push(cursor);
+    cursor = cursor.nextSibling;
+  }
+  return nodes;
+}
+
 class KeyedRow<T> {
   T item;
   int key;
@@ -282,60 +427,61 @@ class KeyedRow<T> {
     this.index = index;
     this.dispose = dispose;
   }
+
+  void drop() {
+    func()->void dispose = this.dispose;
+    this.dispose = emptyDispose;
+    dispose();
+  }
+
+  void release() {
+    this.drop();
+    removeNode(this.node);
+  }
 }
 
 class KeyedTable<T> {
-  KeyedRow<T>[] rows;
-  bool[] present;
+  Map<int, KeyedRow<T> > rows;
   KeyedRow<T>[] order;
 
   init() {
-    this.rows = [];
-    this.present = [];
+    this.rows = new Map<int, KeyedRow<T> >();
     this.order = [];
   }
 
-  void grow(int key, KeyedRow<T> filler) {
-    while (this.present.length <= key) {
-      this.present.push(false);
-      this.rows.push(filler);
-    }
-  }
-
   void put(int key, KeyedRow<T> row) {
-    this.grow(key, row);
-    this.rows[key] = row;
-    this.present[key] = true;
+    this.rows.set(key, row);
     this.order.push(row);
   }
 
   KeyedRow<T>? take(int key) {
-    if (key < 0 || key >= this.present.length) {
+    KeyedRow<T>? row = this.rows.get(key);
+    if (row == null) {
       return null;
     }
-    if (!this.present[key]) {
-      return null;
-    }
-    this.present[key] = false;
-    return this.rows[key];
+    this.rows.delete(key);
+    return row;
   }
 
   void disposeRemaining() {
     for (int index = 0; index < this.order.length; index++) {
       KeyedRow<T> leftover = this.order[index];
-      if (leftover.key >= 0 && leftover.key < this.present.length && this.present[leftover.key]) {
-        leftover.dispose();
-        removeNode(leftover.node);
-        this.present[leftover.key] = false;
+      if (this.rows.has(leftover.key)) {
+        leftover.release();
+        this.rows.delete(leftover.key);
       }
     }
   }
 
   void disposeAll() {
     for (int index = 0; index < this.order.length; index++) {
-      KeyedRow<T> leftover = this.order[index];
-      leftover.dispose();
-      removeNode(leftover.node);
+      this.order[index].release();
+    }
+  }
+
+  void dropAll() {
+    for (int index = 0; index < this.order.length; index++) {
+      this.order[index].drop();
     }
   }
 }
@@ -354,37 +500,107 @@ export void keyedEach<T>(
   func(T)->int keyOf,
   func(T, Signal<int>)->Element createRow
 ) {
+  keyedEachTracked(parent, items, keyOf, createRow, true);
+}
+
+export void keyedEachPlain<T>(
+  Element parent,
+  func()->T[] items,
+  func(T)->int keyOf,
+  func(T)->Element createRow
+) {
+  keyedEachTracked(parent, items, keyOf, (T item, Signal<int> index) => createRow(item), false);
+}
+
+void keyedEachTracked<T>(
+  Element parent,
+  func()->T[] items,
+  func(T)->int keyOf,
+  func(T, Signal<int>)->Element createRow,
+  bool trackIndex
+) {
   Element marker = comment();
   parent.appendChild(marker);
   TableRef<T> holder = new TableRef();
+  Signal<int> unusedIndex = createIntSignal(0);
   func(T[])->void reconcile = (T[] nextItems) => {
     KeyedTable<T> previous = holder.current;
     KeyedTable<T> nextTable = new KeyedTable();
+    int reused = 0;
     for (int index = 0; index < nextItems.length; index++) {
       T item = nextItems[index];
       int key = keyOf(item);
       KeyedRow<T>? matched = previous.take(key);
       if (matched != null) {
         matched.item = item;
-        matched.index.write(index);
+        if (trackIndex) {
+          matched.index.write(index);
+        }
         nextTable.put(key, matched);
+        reused += 1;
       } else {
         createRoot((func()->void innerDispose) => {
-          Signal<int> indexSignal = createIntSignal(index);
+          Signal<int> indexSignal = unusedIndex;
+          if (trackIndex) {
+            indexSignal = createIntSignal(index);
+          }
           Element node = createRow(item, indexSignal);
           nextTable.put(key, new KeyedRow(item, key, node, indexSignal, innerDispose));
           return innerDispose;
         });
       }
     }
-    previous.disposeRemaining();
-    Element? cursor = marker.nextSibling;
+    Element[] nextNodes = [];
     for (int index = 0; index < nextTable.order.length; index++) {
-      KeyedRow<T> row = nextTable.order[index];
-      if (row.node != cursor) {
-        parent.insertBefore(row.node, cursor);
+      nextNodes.push(nextTable.order[index].node);
+    }
+    if (reused == 0) {
+      if (previous.order.length > 0) {
+        wipeAfterMarker(marker);
+        previous.dropAll();
       }
-      cursor = row.node.nextSibling;
+      appendNodes(parent, marker, nextNodes);
+      holder.current = nextTable;
+      return;
+    }
+    if (
+      reused == previous.order.length &&
+      nextNodes.length > reused
+    ) {
+      bool prefix = true;
+      for (int cursor = 0; cursor < reused; cursor++) {
+        if (previous.order[cursor].node != nextTable.order[cursor].node) {
+          prefix = false;
+          break;
+        }
+      }
+      if (prefix) {
+        Element[] tail = [];
+        for (int cursor = reused; cursor < nextNodes.length; cursor++) {
+          tail.push(nextNodes[cursor]);
+        }
+        Element last = nextNodes[reused - 1];
+        Element fragment = document.createDocumentFragment();
+        for (int cursor = 0; cursor < tail.length; cursor++) {
+          fragment.appendChild(tail[cursor]);
+        }
+        parent.insertBefore(fragment, last.nextSibling);
+        holder.current = nextTable;
+        return;
+      }
+    }
+    Element[] previousNodes = [];
+    for (int index = 0; index < previous.order.length; index++) {
+      KeyedRow<T> row = previous.order[index];
+      if (!previous.rows.has(row.key)) {
+        previousNodes.push(row.node);
+      }
+    }
+    previous.disposeRemaining();
+    if (previousNodes.length == 0) {
+      appendNodes(parent, marker, nextNodes);
+    } else {
+      reorderNodes(parent, marker, previousNodes, nextNodes);
     }
     holder.current = nextTable;
   };
@@ -394,6 +610,106 @@ export void keyedEach<T>(
   });
   onCleanup(() => {
     holder.current.disposeAll();
+    removeNode(marker);
+  });
+}
+
+class IdentityRow<T> {
+  T item;
+  Element node;
+  Signal<int> index;
+  func()->void dispose;
+
+  init(T item, Element node, Signal<int> index, func()->void dispose) {
+    this.item = item;
+    this.node = node;
+    this.index = index;
+    this.dispose = dispose;
+  }
+
+  void release() {
+    func()->void dispose = this.dispose;
+    this.dispose = emptyDispose;
+    dispose();
+    removeNode(this.node);
+  }
+}
+
+class IdentityTable<T> {
+  IdentityRow<T>[] order;
+
+  init() {
+    this.order = [];
+  }
+}
+
+class IdentityRef<T> {
+  IdentityTable<T> current;
+
+  init() {
+    this.current = new IdentityTable();
+  }
+}
+
+export void identityEach<T>(
+  Element parent,
+  func()->T[] items,
+  func(T, Signal<int>)->Element createRow
+) {
+  Element marker = comment();
+  parent.appendChild(marker);
+  IdentityRef<T> holder = new IdentityRef();
+  func(T[])->void reconcile = (T[] nextItems) => {
+    IdentityRow<T>[] previous = holder.current.order;
+    IdentityRow<T>[] nextRows = [];
+    for (int index = 0; index < nextItems.length; index++) {
+      T item = nextItems[index];
+      IdentityRow<T>? matched = null;
+      for (int cursor = 0; cursor < previous.length; cursor++) {
+        IdentityRow<T> candidate = previous[cursor];
+        if (candidate.item == item) {
+          matched = candidate;
+          int last = previous.length - 1;
+          previous[cursor] = previous[last];
+          previous.pop();
+          break;
+        }
+      }
+      if (matched != null) {
+        matched.index.write(index);
+        nextRows.push(matched);
+      } else {
+        createRoot((func()->void innerDispose) => {
+          Signal<int> indexSignal = createIntSignal(index);
+          Element node = createRow(item, indexSignal);
+          nextRows.push(new IdentityRow(item, node, indexSignal, innerDispose));
+          return innerDispose;
+        });
+      }
+    }
+    while (previous.length > 0) {
+      IdentityRow<T> leftover = previous[previous.length - 1];
+      previous.pop();
+      leftover.release();
+    }
+    Element[] nextNodes = [];
+    for (int index = 0; index < nextRows.length; index++) {
+      nextNodes.push(nextRows[index].node);
+    }
+    reorderNodes(parent, marker, liveSiblings(marker), nextNodes);
+    holder.current.order = nextRows;
+  };
+  createRenderEffect(() => {
+    T[] nextItems = items();
+    untrack(() => reconcile(nextItems));
+  });
+  onCleanup(() => {
+    IdentityRow<T>[] current = holder.current.order;
+    while (current.length > 0) {
+      IdentityRow<T> leftover = current[current.length - 1];
+      current.pop();
+      leftover.release();
+    }
     removeNode(marker);
   });
 }

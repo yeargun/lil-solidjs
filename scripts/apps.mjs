@@ -10,7 +10,11 @@ export const apps = [
   { id: "error-reset", title: "Error reset", group: "control" },
   { id: "todolist", title: "Todo list", group: "apps" },
   { id: "store-cart", title: "Store cart", group: "apps" },
+  { id: "kanban", title: "Kanban board", group: "apps" },
+  { id: "inbox", title: "Inbox", group: "apps" },
+  { id: "marketplace", title: "Lil marketplace", group: "apps" },
   { id: "keyed", title: "Keyed table", group: "performance" },
+  { id: "spreadsheet", title: "Spreadsheet", group: "performance" },
   { id: "svg-clock", title: "SVG clock", group: "visual" },
   { id: "portal-modal", title: "Portal modal", group: "visual" },
 ]

@@ -30,6 +30,8 @@ export function createBoolMemo(compute: () => boolean): unknown
 export function createStringMemo(compute: () => string): unknown
 export function createUserEffect(callback: () => void): number
 export function createRenderEffect(callback: () => void): number
+export function createSelector(source: { read(): number; peek(): number }): unknown
+export function selectorMatch(selector: unknown, value: number): boolean
 export function createRenderBind<T>(compute: () => T, apply: (value: T) => void): void
 export function signalGet<T>(signal: unknown): T
 export function signalSet<T>(signal: unknown, value: T): T

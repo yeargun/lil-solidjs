@@ -1,0 +1,201 @@
+import { Signal, append, createIntSignal, createMemo, createSignal, createStringSignal, render } from "solidlil";
+
+class Product {
+  int id;
+  string name;
+  string blurb;
+  string category;
+  int price;
+
+  init(int id, string name, string blurb, string category, int price) {
+    this.id = id;
+    this.name = name;
+    this.blurb = blurb;
+    this.category = category;
+    this.price = price;
+  }
+}
+
+class Line {
+  int id;
+  string name;
+  int price;
+  Signal<int> qty;
+
+  init(int id, string name, int price, int qty) {
+    this.id = id;
+    this.name = name;
+    this.price = price;
+    this.qty = createIntSignal(qty);
+  }
+}
+
+class NodeRef {
+  Element? node;
+
+  init() {
+    this.node = null;
+  }
+}
+
+bool nameHit(string haystack, string needle) {
+  if (needle.length == 0) {
+    return true;
+  }
+  return haystack.indexOf(needle) >= 0;
+}
+
+string categoryOf(int filter) {
+  if (filter == 1) {
+    return "runtime";
+  }
+  if (filter == 2) {
+    return "editor";
+  }
+  if (filter == 3) {
+    return "lab";
+  }
+  return "all";
+}
+
+string chipClass(int filter, int id) {
+  if (filter == id) {
+    return "primary";
+  }
+  return "";
+}
+
+Line? findLine(Line[] cart, int id) {
+  for (int index = 0; index < cart.length; index++) {
+    if (cart[index].id == id) {
+      return cart[index];
+    }
+  }
+  return null;
+}
+
+int cartCount(Line[] cart) {
+  int total = 0;
+  for (int index = 0; index < cart.length; index++) {
+    total += cart[index].qty.read();
+  }
+  return total;
+}
+
+int cartTotal(Line[] cart) {
+  int total = 0;
+  for (int index = 0; index < cart.length; index++) {
+    Line line = cart[index];
+    total += line.price * line.qty.read();
+  }
+  return total;
+}
+
+func()->void dispose = render("#app", (Element root) => {
+  Product[] catalog = [
+    new Product(1, "Signals core", "Queued writes, flush, split effects.", "runtime", 12),
+    new Product(2, "LSX templates", "cloneNode rows, same as Solid JSX.", "editor", 18),
+    new Product(3, "For / Repeat", "Keyed list reconcile.", "runtime", 9),
+    new Product(4, "Piece tree", "Buffer used by the Monaco port.", "editor", 28),
+    new Product(5, "JFB harness", "Official keyed jumbotron table.", "lab", 6),
+    new Product(6, "Closed-world cfg", "Delete unused runtime per app.", "lab", 14),
+    new Product(7, "Selector notify", "Wake two rows, not a thousand.", "runtime", 11),
+    new Product(8, "Store draft", "Mutate, then flush.", "runtime", 16)
+  ];
+  Signal<string> query = createStringSignal("");
+  Signal<int> filter = createIntSignal(0);
+  Signal<Line[]> cart = createSignal([], (Line[] a, Line[] b) => false);
+  NodeRef field = new NodeRef();
+  Signal<Product[]> visible = createMemo([], () => {
+    string needle = query.read();
+    string selected = categoryOf(filter.read());
+    Product[] next = [];
+    for (int index = 0; index < catalog.length; index++) {
+      Product product = catalog[index];
+      if (selected != "all" && product.category != selected) {
+        continue;
+      }
+      if (!nameHit(product.name, needle) && !nameHit(product.blurb, needle)) {
+        continue;
+      }
+      next.push(product);
+    }
+    return next;
+  }, (Product[] a, Product[] b) => false);
+
+  Element view = (
+    <div class="stack market">
+      <div>
+        <h2>Lil marketplace</h2>
+        <p class="muted">Catalog, category chips, search memo, and a keyed cart. TypeScript Solid 2.0 on the left, LSX on the right.</p>
+        <div class="row">
+          <input
+            placeholder="Search kits"
+            ref={(Element node) => { field.node = node; }}
+            value={query.read()}
+            onInput={() => {
+              Element? node = field.node;
+              if (node != null) {
+                query.write(node.value);
+              }
+            }}
+          />
+        </div>
+        <div class="row">
+          <button class={chipClass(filter.read(), 0)} onClick={() => { filter.write(0); }}>All</button>
+          <button class={chipClass(filter.read(), 1)} onClick={() => { filter.write(1); }}>Runtime</button>
+          <button class={chipClass(filter.read(), 2)} onClick={() => { filter.write(2); }}>Editor</button>
+          <button class={chipClass(filter.read(), 3)} onClick={() => { filter.write(3); }}>Lab</button>
+        </div>
+        <div class="market-grid">
+          <For each={visible} keyed={(Product product) => product.id}>
+            {(Product product) => (
+              <div class="product">
+                <span class="muted">{product.category}</span>
+                <strong>{product.name}</strong>
+                <span>{product.blurb}</span>
+                <div class="row">
+                  <span class="price">{"$" + product.price}</span>
+                  <button class="primary" onClick={() => {
+                    Line[] current = cart.read();
+                    Line? existing = findLine(current, product.id);
+                    if (existing != null) {
+                      existing.qty.write(existing.qty.read() + 1);
+                      return;
+                    }
+                    Line[] next = current.slice();
+                    next.push(new Line(product.id, product.name, product.price, 1));
+                    cart.write(next);
+                  }}>Add</button>
+                </div>
+              </div>
+            )}
+          </For>
+        </div>
+      </div>
+      <div class="card cart">
+        <h3>{"Cart · " + cartCount(cart.read())}</h3>
+        <Show when={cart.read().length > 0} fallback={<p class="muted">Empty. Add a kit.</p>}>
+          <For each={cart} keyed={(Line line) => line.id}>
+            {(Line line) => (
+              <div class="todo-item">
+                <span>{line.name}</span>
+                <button onClick={() => {
+                  int next = line.qty.read() - 1;
+                  if (next < 0) {
+                    next = 0;
+                  }
+                  line.qty.write(next);
+                }}>-</button>
+                <strong>{"" + line.qty.read()}</strong>
+                <button onClick={() => { line.qty.write(line.qty.read() + 1); }}>+</button>
+              </div>
+            )}
+          </For>
+          <p>{"Total $" + cartTotal(cart.read())}</p>
+        </Show>
+      </div>
+    </div>
+  );
+  append(root, view);
+});

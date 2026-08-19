@@ -70,6 +70,7 @@ const DOM_IMPORTS = [
 
 const REACTIVE_IMPORTS = [
   "Context",
+  "Selector",
   "Signal",
   "createBoolSignal",
   "createContext",
@@ -78,6 +79,7 @@ const REACTIVE_IMPORTS = [
   "createIntSignal",
   "createMemo",
   "createSignal",
+  "createSelector",
   "createStringSignal",
   "createUserEffect",
   "flush",

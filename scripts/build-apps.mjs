@@ -83,7 +83,7 @@ async function compileKeyedPerformance() {
   const out = join(distApps, "keyed", "solidlil.performance.js")
   const result = spawnSync(
     compiler,
-    [generated, "--target", "js-module", "--config", join(root, "src", "lilscript.performance.toml"), "--mode", "production", "--output", out],
+    [generated, "--target", "js-module", "--config", join(root, "src", "lilscript.closed.toml"), "--mode", "production", "--output", out],
     { cwd: root, encoding: "utf8", maxBuffer: 32 * 1024 * 1024 },
   )
   if (result.status !== 0) {
@@ -145,16 +145,26 @@ for (const app of apps) {
   console.log(`building ${app.id}`)
   const lil = await compileLil(app.id)
   const solidDir = join(distApps, app.id)
+  const solidEntry = [
+    join(root, "apps", app.id, "solid", "main.tsx"),
+    join(root, "apps", app.id, "solid", "main.jsx"),
+  ].find((candidate) => existsSync(candidate))
+  if (!solidEntry) throw new Error(`${app.id} is missing apps/${app.id}/solid/main.tsx or main.jsx`)
   await viteBuild({
     configFile: false,
     root,
     build: {
       outDir: join(solidDir, "solid-out"),
       emptyOutDir: true,
-      minify: true,
+      minify: "terser",
       cssCodeSplit: false,
+      terserOptions: {
+        compress: { passes: 3, pure_getters: true },
+        mangle: true,
+        format: { comments: false },
+      },
       rollupOptions: {
-        input: join(root, "apps", app.id, "solid", "main.jsx"),
+        input: solidEntry,
         output: {
           entryFileNames: "solid.js",
           chunkFileNames: "solid-[name].js",
@@ -162,7 +172,8 @@ for (const app of apps) {
           format: "es",
         },
         treeshake: {
-          moduleSideEffects: true,
+          moduleSideEffects: false,
+          propertyReadSideEffects: false,
         },
       },
     },
@@ -241,7 +252,7 @@ const summary = {
   generatedAt: new Date().toISOString(),
   compression: { gzip: 9, brotli: 11 },
   solid: "solid-js@2.0.0-rc.0 + @solidjs/web@2.0.0-rc.0",
-  solidlil: "closed-world LilScript production",
+  solidlil: "closed-world LilScript production versus Solid 2.0 with package sideEffects:false",
   cases: results.length,
   metrics: {
     raw: metricTotals("raw"),
@@ -252,6 +263,7 @@ const summary = {
   artifacts,
   examples: results,
   ...(previous?.performance ? { performance: previous.performance } : {}),
+  ...(previous?.jsFrameworkBenchmark ? { jsFrameworkBenchmark: previous.jsFrameworkBenchmark } : {}),
 }
 
 await writeFile(join(root, "site", "results.json"), JSON.stringify(summary, null, 2) + "\n")

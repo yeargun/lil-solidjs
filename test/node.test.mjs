@@ -58,6 +58,30 @@ test("split createEffect applies after compute", () => {
   })
 })
 
+test("createSelector only notifies matching keys", () => {
+  core.createRoot(() => {
+    const selected = core.createIntSignal(0)
+    const selector = core.createSelector(selected)
+    let hits = 0
+    core.createRenderEffect(() => {
+      if (core.selectorMatch(selector, 3)) hits += 1
+    })
+    core.createRenderEffect(() => {
+      if (core.selectorMatch(selector, 7)) hits += 10
+    })
+    assert.equal(hits, 0)
+    core.signalSet(selected, 3)
+    core.flush()
+    assert.equal(hits, 1)
+    core.signalSet(selected, 7)
+    core.flush()
+    assert.equal(hits, 11)
+    core.signalSet(selected, 9)
+    core.flush()
+    assert.equal(hits, 11)
+  })
+})
+
 test("createStore mutates a draft", () => {
   solidlil.createRoot(() => {
     const [cart, setCart] = solidlil.createStore({ qty: 1 })
@@ -68,6 +92,21 @@ test("createStore mutates a draft", () => {
     solidlil.flush()
     assert.equal(cart().qty, 3)
   })
+})
+
+test("disposing a root recycles effect slots", () => {
+  const dispose = core.createRoot((d) => {
+    for (let i = 0; i < 40; i++) core.createRenderEffect(() => {})
+    return d
+  })
+  const freeAfterCreate = core.diagnosticFreeEffectSlots()
+  dispose()
+  assert.equal(core.diagnosticFreeEffectSlots(), freeAfterCreate + 40)
+})
+
+test("public entries export createSelector", () => {
+  assert.equal(typeof solidlil.createSelector, "function")
+  assert.equal(typeof solidlil.selectorMatch, "function")
 })
 
 test("CommonJS entry exposes the same public names", () => {

@@ -28,13 +28,24 @@ const brotli = data.metrics.brotli
 const gzip = data.metrics.gzip
 const raw = data.metrics.raw
 
+const jfb = data.jsFrameworkBenchmark
+const jfbBrotli = jfb
+  ? (1 - jfb.sizes.solidlil.brotli / jfb.sizes.solid.brotli) * 100
+  : brotli.weightedReduction
+const jfbRaw = jfb
+  ? (1 - jfb.sizes.solidlil.raw / jfb.sizes.solid.raw) * 100
+  : raw.weightedReduction
+document.querySelector("#score-jfb-brotli").textContent = pct(jfbBrotli)
+document.querySelector("#score-jfb-bytes").textContent = jfb
+  ? `${formatter.format(jfb.sizes.solid.brotli)} B → ${formatter.format(jfb.sizes.solidlil.brotli)} B vs Solid 2.0`
+  : "keyed table vs Solid 2.0"
 document.querySelector("#score-wins").innerHTML = `${brotli.wins}<span>/${data.cases}</span>`
-document.querySelector("#score-brotli").textContent = pct(brotli.weightedReduction)
-document.querySelector("#score-gzip").textContent = pct(gzip.weightedReduction)
-document.querySelector("#score-raw").textContent = pct(raw.weightedReduction)
+document.querySelector("#score-demo-brotli").textContent = pct(brotli.weightedReduction)
+document.querySelector("#score-jfb-raw").textContent = pct(jfbRaw)
 
-const createRatio = data.performance?.browserMs?.ratio?.create1k
-document.querySelector("#score-perf").textContent = createRatio == null
+const createRatio = jfb?.geomean?.cpu
+  ?? data.performance?.browserMs?.ratio?.create1k
+document.querySelector("#score-jfb-cpu").textContent = createRatio == null
   ? (data.performance?.browserMs?.skipped ? "node only" : "—")
   : `${createRatio.toFixed(2)}×`
 
@@ -121,32 +132,52 @@ function row(name, solid, lil, ratioValue) {
 
 function renderPerf() {
   const perf = data.performance
-  if (!perf) {
+  const jfb = data.jsFrameworkBenchmark
+  if (!perf && !jfb) {
     perfBody.innerHTML = row("Benchmarks not generated", "—", "—", "—")
     document.querySelector("#perf-note").textContent = "Run npm run bench:perf after build:apps."
     return
   }
-  const nodeSolid = perf.nodeMs.solid
-  const nodeLil = perf.nodeMs.solidlil
-  const nodeRatio = perf.nodeMs.ratio ?? {}
-  const rows = [
-    row("Node 50k signal write+flush+read", ms(nodeSolid?.signal50k), ms(nodeLil.signal50k), times(nodeRatio.signal50k)),
-    row("Node 50k memo invalidate+read", ms(nodeSolid?.memo50k), ms(nodeLil.memo50k), times(nodeRatio.memo50k)),
-    row("Node 10k split effects", ms(nodeSolid?.effect10k), ms(nodeLil.effect10k), times(nodeRatio.effect10k)),
-  ]
-  const browser = perf.browserMs
-  if (browser && !browser.skipped) {
+  const rows = []
+  if (perf) {
+    const nodeSolid = perf.nodeMs.solid
+    const nodeLil = perf.nodeMs.solidlil
+    const nodeRatio = perf.nodeMs.ratio ?? {}
     rows.push(
-      row("Browser keyed create 1,000", ms(browser.solid.create1k), ms(browser.solidlil.create1k), times(browser.ratio.create1k)),
-      row("Browser keyed update every 10th", ms(browser.solid.updateEvery10th), ms(browser.solidlil.updateEvery10th), times(browser.ratio.updateEvery10th)),
-      row("Browser keyed swap rows", ms(browser.solid.swap), ms(browser.solidlil.swap), times(browser.ratio.swap)),
-      row("Browser keyed clear", ms(browser.solid.clear), ms(browser.solidlil.clear), times(browser.ratio.clear)),
+      row("Node 50k signal write+flush+read", ms(nodeSolid?.signal50k), ms(nodeLil.signal50k), times(nodeRatio.signal50k)),
+      row("Node 50k memo invalidate+read", ms(nodeSolid?.memo50k), ms(nodeLil.memo50k), times(nodeRatio.memo50k)),
+      row("Node 10k split effects", ms(nodeSolid?.effect10k), ms(nodeLil.effect10k), times(nodeRatio.effect10k)),
     )
+  }
+  if (jfb?.cpu) {
+    for (const item of jfb.cpu) {
+      rows.push(row(item.name, ms(item.solid), ms(item.solidlil), times(item.ratio)))
+    }
+    if (jfb.geomean?.cpu != null) {
+      rows.push(row("JFB CPU geometric mean", "1.00×", times(jfb.geomean.cpu), times(jfb.geomean.cpu)))
+    }
+    if (jfb.memory) {
+      for (const item of jfb.memory) {
+        rows.push(row(item.name, `${item.solid.toFixed(2)} MB`, `${item.solidlil.toFixed(2)} MB`, times(item.ratio)))
+      }
+    }
     document.querySelector("#perf-note").textContent =
-      `Node ${perf.node}, vs @solidjs/signals@2.0.0-rc.0. Browser medians of 9 Playwright samples on the keyed table versus solid-js + @solidjs/web. Ratio is solidlil / Solid 2.0 (lower is faster).`
+      `Official js-framework-benchmark, Chrome with CPU throttling, ${jfb.blocks ?? 15} blocks. Same keyed jumbotron table: Solid 2.0 JSX vs solidlil LSX, both compiled to cloneNode templates. Ratio is solidlil / Solid 2.0 (lower is faster). Node graphs use @solidjs/signals@2.0.0-rc.0.`
   } else {
-    document.querySelector("#perf-note").textContent =
-      `Node ${perf.node}. Browser benches were skipped${browser?.error ? `: ${browser.error}` : "."}`
+    const browser = perf?.browserMs
+    if (browser && !browser.skipped) {
+      rows.push(
+        row("Browser keyed create 1,000", ms(browser.solid.create1k), ms(browser.solidlil.create1k), times(browser.ratio.create1k)),
+        row("Browser keyed update every 10th", ms(browser.solid.updateEvery10th), ms(browser.solidlil.updateEvery10th), times(browser.ratio.updateEvery10th)),
+        row("Browser keyed swap rows", ms(browser.solid.swap), ms(browser.solidlil.swap), times(browser.ratio.swap)),
+        row("Browser keyed clear", ms(browser.solid.clear), ms(browser.solidlil.clear), times(browser.ratio.clear)),
+      )
+      document.querySelector("#perf-note").textContent =
+        `Node ${perf.node}, vs @solidjs/signals@2.0.0-rc.0. Browser medians of 9 Playwright samples on the keyed table versus solid-js + @solidjs/web. Ratio is solidlil / Solid 2.0 (lower is faster).`
+    } else {
+      document.querySelector("#perf-note").textContent =
+        `Node ${perf?.node ?? ""}. Browser benches were skipped${browser?.error ? `: ${browser.error}` : "."}`
+    }
   }
   perfBody.innerHTML = rows.join("")
 }

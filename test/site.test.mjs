@@ -11,8 +11,8 @@ const read = (path) => readFile(join(root, path), "utf8")
 const results = JSON.parse(await read("site/results.json"))
 
 test("the Pages lab contains every paired Solid 2.0 demo", () => {
-  assert.equal(results.examples.length, 14)
-  assert.equal(results.cases, 14)
+  assert.equal(results.examples.length, apps.length)
+  assert.equal(results.cases, apps.length)
   assert.deepEqual(results.examples.map((example) => example.id), apps.map((app) => app.id))
   for (const example of results.examples) {
     assert.ok(example.solid.raw > 0 && example.solid.gzip > 0 && example.solid.brotli > 0)
@@ -50,8 +50,9 @@ test("every API used by the live recreations exists in solidlil", () => {
 test("the README leads with size and performance evidence", async () => {
   const readme = await read("README.md")
   const evidence = readme.indexOf("paired browser demos")
+  const jfb = readme.indexOf("js-framework-benchmark")
   const install = readme.indexOf("npm install solidlil")
-  assert.ok(evidence > 0 && evidence < install)
+  assert.ok(jfb > 0 && jfb < evidence && evidence < install)
   assert.match(readme, /raw \/ gzip-9 \/ Brotli-11/)
   assert.match(readme, /https:\/\/yeargun\.github\.io\/solidlil\//)
 })

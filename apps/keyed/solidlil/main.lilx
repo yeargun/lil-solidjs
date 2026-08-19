@@ -1,4 +1,4 @@
-import { Signal, append, createIntSignal, createSignal, createStringSignal, render } from "solidlil";
+import { Selector, Signal, append, createIntSignal, createSelector, createSignal, createStringSignal, render } from "solidlil";
 
 string[] adjectives = [
   "pretty", "large", "big", "small", "tall", "short", "long",
@@ -33,6 +33,7 @@ func()->void dispose = render("#app", (Element root) => {
   Signal<int> nextId = createIntSignal(1);
   Signal<Row[]> rows = createSignal([], (Row[] a, Row[] b) => false);
   Signal<int> selected = createIntSignal(0);
+  Selector isSelected = createSelector(selected);
 
   func(int)->Row[] build = (int count) => {
     Row[] result = [];
@@ -87,7 +88,7 @@ func()->void dispose = render("#app", (Element root) => {
         <tbody>
           <For each={rows} keyed={(Row row) => row.id}>
             {(Row row) => (
-              <tr class={{ danger: selected.read() == row.id }}>
+              <tr class={{ danger: isSelected.match(row.id) }}>
                 <td>{row.id}</td>
                 <td>
                   <a onClick={() => { selected.write(row.id); }}>{row.label.read()}</a>

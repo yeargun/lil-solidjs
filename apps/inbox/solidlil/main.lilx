@@ -1,0 +1,136 @@
+import { Signal, append, createBoolSignal, createIntSignal, createMemo, createSignal, render } from "solidlil";
+
+class Message {
+  int id;
+  string from;
+  string subject;
+  string body;
+  Signal<bool> unread;
+
+  init(int id, string from, string subject, string body, bool unread) {
+    this.id = id;
+    this.from = from;
+    this.subject = subject;
+    this.body = body;
+    this.unread = createBoolSignal(unread);
+  }
+}
+
+string rowClass(Message message, Signal<int> selected) {
+  if (selected.read() == message.id) {
+    return "mail-row sel";
+  }
+  return "mail-row";
+}
+
+string subjectClass(Message message) {
+  if (message.unread.read()) {
+    return "";
+  }
+  return "muted";
+}
+
+int unreadCount(Message[] items) {
+  int total = 0;
+  for (int index = 0; index < items.length; index++) {
+    if (items[index].unread.read()) {
+      total += 1;
+    }
+  }
+  return total;
+}
+
+Message? findMessage(Message[] items, int id) {
+  for (int index = 0; index < items.length; index++) {
+    if (items[index].id == id) {
+      return items[index];
+    }
+  }
+  return null;
+}
+
+string detailSubject(Message[] items, Signal<int> selectedId) {
+  Message? message = findMessage(items, selectedId.read());
+  if (message == null) {
+    return "";
+  }
+  return message.subject;
+}
+
+string detailFrom(Message[] items, Signal<int> selectedId) {
+  Message? message = findMessage(items, selectedId.read());
+  if (message == null) {
+    return "";
+  }
+  return message.from;
+}
+
+string detailBody(Message[] items, Signal<int> selectedId) {
+  Message? message = findMessage(items, selectedId.read());
+  if (message == null) {
+    return "";
+  }
+  return message.body;
+}
+
+func()->void dispose = render("#app", (Element root) => {
+  Message[] items = [
+    new Message(1, "Ryan", "Solid 2.0 rc", "Queued writes landed. Flush is explicit now.", true),
+    new Message(2, "Bench", "JFB keyed table", "Create, update, swap, clear. Same jumbotron DOM.", true),
+    new Message(3, "Lil", "LSX templates", "cloneTemplate for rows, same as Solid's JSX output.", false),
+    new Message(4, "Runtime", "Dispose recycle", "Drop row closures from the effect free list.", true),
+    new Message(5, "Site", "Paired demos", "Every example is Solid JSX next to LSX.", false)
+  ];
+  Signal<int> selectedId = createIntSignal(1);
+  Signal<bool> unreadOnly = createBoolSignal(false);
+  Signal<Message[]> visible = createMemo([], () => {
+    if (!unreadOnly.read()) {
+      return items;
+    }
+    Message[] filtered = [];
+    for (int index = 0; index < items.length; index++) {
+      Message message = items[index];
+      if (message.unread.read()) {
+        filtered.push(message);
+      }
+    }
+    return filtered;
+  }, (Message[] a, Message[] b) => false);
+
+  Element view = (
+    <div class="stack">
+      <h2>Inbox</h2>
+      <p class="muted">{unreadCount(items) + " unread. Selecting a message marks it read. Filter is a memo over per-row unread signals."}</p>
+      <div class="row">
+        <button class="primary" onClick={() => { unreadOnly.write(false); }}>All</button>
+        <button onClick={() => { unreadOnly.write(true); }}>Unread</button>
+      </div>
+      <div class="inbox">
+        <div>
+          <For each={visible} keyed={(Message message) => message.id}>
+            {(Message message) => (
+              <button
+                class={rowClass(message, selectedId)}
+                onClick={() => {
+                  selectedId.write(message.id);
+                  message.unread.write(false);
+                }}
+              >
+                <strong>{message.from}</strong>
+                <span class={subjectClass(message)}>{message.subject}</span>
+              </button>
+            )}
+          </For>
+        </div>
+        <div class="card">
+          <Show when={findMessage(items, selectedId.read()) != null} fallback={<p class="muted">No message</p>}>
+            <h3>{detailSubject(items, selectedId)}</h3>
+            <p class="muted">{detailFrom(items, selectedId)}</p>
+            <p>{detailBody(items, selectedId)}</p>
+          </Show>
+        </div>
+      </div>
+    </div>
+  );
+  append(root, view);
+});
