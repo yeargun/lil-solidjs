@@ -1,67 +1,67 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-08-19T11:41:53.332Z",
+  "generatedAt": "2026-08-19T14:26:15.371Z",
   "compression": {
     "gzip": 9,
     "brotli": 11
   },
   "solid": "solid-js@2.0.0-rc.0 + @solidjs/web@2.0.0-rc.0",
   "solidlil": "official JFB keyed table versus Solid 2.0, plus closed-world LSX demos",
-  "cases": 18,
+  "cases": 21,
   "metrics": {
     "raw": {
-      "solid": 550651,
-      "solidlil": 116918,
-      "weightedReduction": 78.76731359790503,
-      "medianReduction": 81.33319247834353,
-      "minimumReduction": 67.6147689744429,
-      "maximumReduction": 85.85713379701076,
-      "wins": 18
+      "solid": 660785,
+      "solidlil": 149927,
+      "weightedReduction": 77.31077430631748,
+      "medianReduction": 78.84901748956175,
+      "minimumReduction": 65.16319062211777,
+      "maximumReduction": 84.64368010485592,
+      "wins": 21
     },
     "gzip": {
-      "solid": 211776,
-      "solidlil": 50809,
-      "weightedReduction": 76.00814067694166,
-      "medianReduction": 78.88544326887997,
-      "minimumReduction": 64.72808504082576,
-      "maximumReduction": 83.27235307569174,
-      "wins": 18
+      "solid": 253365,
+      "solidlil": 63561,
+      "weightedReduction": 74.9132674205198,
+      "medianReduction": 76.31377940727162,
+      "minimumReduction": 62.79463873054999,
+      "maximumReduction": 82.19757603475874,
+      "wins": 21
     },
     "brotli": {
-      "solid": 192193,
-      "solidlil": 45155,
-      "weightedReduction": 76.50538781329185,
-      "medianReduction": 79.56709089087083,
-      "minimumReduction": 65.30212765957447,
-      "maximumReduction": 83.4123822171631,
-      "wins": 18
+      "solid": 229858,
+      "solidlil": 56510,
+      "weightedReduction": 75.41525637567541,
+      "medianReduction": 76.91074742702885,
+      "minimumReduction": 63.217021276595744,
+      "maximumReduction": 82.3562891291975,
+      "wins": 21
     }
   },
   "keyedPerformance": {
-    "raw": 9074,
-    "gzip": 3920,
-    "brotli": 3457
+    "raw": 9776,
+    "gzip": 4132,
+    "brotli": 3677
   },
   "artifacts": {
     "core": {
-      "raw": 6381,
-      "gzip": 2510,
-      "brotli": 2283
+      "raw": 7645,
+      "gzip": 3016,
+      "brotli": 2740
     },
     "web": {
-      "raw": 11843,
-      "gzip": 4561,
-      "brotli": 4041
+      "raw": 36286,
+      "gzip": 12728,
+      "brotli": 11369
     },
     "full": {
-      "raw": 13538,
-      "gzip": 5090,
-      "brotli": 4544
+      "raw": 16688,
+      "gzip": 6189,
+      "brotli": 5535
     },
     "index.bundle": {
-      "raw": 6805,
-      "gzip": 2743,
-      "brotli": 2498
+      "raw": 17931,
+      "gzip": 6568,
+      "brotli": 5998
     }
   },
   "examples": [
@@ -75,14 +75,14 @@
         "brotli": 9434
       },
       "solidlil": {
-        "raw": 4171,
-        "gzip": 1951,
-        "brotli": 1738
+        "raw": 4605,
+        "gzip": 2044,
+        "brotli": 1805
       },
       "reduction": {
-        "raw": 84.45802436934083,
-        "gzip": 81.19518072289156,
-        "brotli": 81.57727369090524
+        "raw": 82.84085404478891,
+        "gzip": 80.29879518072289,
+        "brotli": 80.86707653169387
       }
     },
     {
@@ -95,14 +95,14 @@
         "brotli": 9527
       },
       "solidlil": {
-        "raw": 4534,
-        "gzip": 2092,
-        "brotli": 1847
+        "raw": 4985,
+        "gzip": 2214,
+        "brotli": 1950
       },
       "reduction": {
-        "raw": 83.2681378699535,
-        "gzip": 80.1065043742868,
-        "brotli": 80.61299464679333
+        "raw": 81.60380839914384,
+        "gzip": 78.9463674400913,
+        "brotli": 79.53185682796263
       }
     },
     {
@@ -115,14 +115,14 @@
         "brotli": 9477
       },
       "solidlil": {
-        "raw": 4360,
-        "gzip": 1995,
-        "brotli": 1765
+        "raw": 4769,
+        "gzip": 2104,
+        "brotli": 1849
       },
       "reduction": {
-        "raw": 83.81768919570946,
-        "gzip": 80.87431693989072,
-        "brotli": 81.37596285744434
+        "raw": 82.2996696730134,
+        "gzip": 79.8293548077845,
+        "brotli": 80.48960641553235
       }
     },
     {
@@ -135,34 +135,94 @@
         "brotli": 9759
       },
       "solidlil": {
-        "raw": 4932,
-        "gzip": 2190,
-        "brotli": 1954
+        "raw": 5435,
+        "gzip": 2403,
+        "brotli": 2139
       },
       "reduction": {
-        "raw": 82.28829993535875,
-        "gzip": 79.59183673469387,
-        "brotli": 79.97745670662978
+        "raw": 80.48193636428931,
+        "gzip": 77.6069331842326,
+        "brotli": 78.08177067322471
       }
     },
     {
       "id": "async-profile",
       "title": "Async memo",
-      "group": "reactive",
+      "group": "async",
       "solid": {
-        "raw": 34049,
-        "gzip": 13005,
-        "brotli": 11794
+        "raw": 34249,
+        "gzip": 13092,
+        "brotli": 11854
       },
       "solidlil": {
-        "raw": 5387,
-        "gzip": 2444,
-        "brotli": 2174
+        "raw": 7244,
+        "gzip": 3101,
+        "brotli": 2737
       },
       "reduction": {
-        "raw": 84.17868366178155,
-        "gzip": 81.20722798923491,
-        "brotli": 81.56689842292691
+        "raw": 78.84901748956175,
+        "gzip": 76.31377940727162,
+        "brotli": 76.91074742702885
+      }
+    },
+    {
+      "id": "optimistic-save",
+      "title": "Optimistic action",
+      "group": "async",
+      "solid": {
+        "raw": 30777,
+        "gzip": 11776,
+        "brotli": 10658
+      },
+      "solidlil": {
+        "raw": 5883,
+        "gzip": 2573,
+        "brotli": 2287
+      },
+      "reduction": {
+        "raw": 80.88507651817916,
+        "gzip": 78.15047554347827,
+        "brotli": 78.54194032651529
+      }
+    },
+    {
+      "id": "reveal-feed",
+      "title": "Reveal feed",
+      "group": "async",
+      "solid": {
+        "raw": 31557,
+        "gzip": 12146,
+        "brotli": 11029
+      },
+      "solidlil": {
+        "raw": 7495,
+        "gzip": 3095,
+        "brotli": 2761
+      },
+      "reduction": {
+        "raw": 76.24932661533099,
+        "gzip": 74.51835995389429,
+        "brotli": 74.96599873061928
+      }
+    },
+    {
+      "id": "projection-filter",
+      "title": "Projection",
+      "group": "async",
+      "solid": {
+        "raw": 47600,
+        "gzip": 17580,
+        "brotli": 15918
+      },
+      "solidlil": {
+        "raw": 8374,
+        "gzip": 3516,
+        "brotli": 3158
+      },
+      "reduction": {
+        "raw": 82.40756302521008,
+        "gzip": 80,
+        "brotli": 80.16082422414877
       }
     },
     {
@@ -175,14 +235,14 @@
         "brotli": 10076
       },
       "solidlil": {
-        "raw": 6022,
-        "gzip": 2660,
-        "brotli": 2372
+        "raw": 6575,
+        "gzip": 2821,
+        "brotli": 2499
       },
       "reduction": {
-        "raw": 79.12072671798072,
-        "gzip": 76.04682575416479,
-        "brotli": 76.45891226677253
+        "raw": 77.20338395395603,
+        "gzip": 74.59702836560108,
+        "brotli": 75.19849146486702
       }
     },
     {
@@ -195,14 +255,14 @@
         "brotli": 9910
       },
       "solidlil": {
-        "raw": 4994,
-        "gzip": 2251,
-        "brotli": 1974
+        "raw": 5540,
+        "gzip": 2414,
+        "brotli": 2134
       },
       "reduction": {
-        "raw": 82.293919517816,
-        "gzip": 79.36755270394133,
-        "brotli": 80.08072653884965
+        "raw": 80.35809253678426,
+        "gzip": 77.87351054078827,
+        "brotli": 78.46619576185671
       }
     },
     {
@@ -215,14 +275,14 @@
         "brotli": 10648
       },
       "solidlil": {
-        "raw": 7386,
-        "gzip": 3191,
-        "brotli": 2864
+        "raw": 8001,
+        "gzip": 3368,
+        "brotli": 3027
       },
       "reduction": {
-        "raw": 75.7780474207195,
-        "gzip": 72.81478957232919,
-        "brotli": 73.10293012772351
+        "raw": 73.76119109303775,
+        "gzip": 71.30686658715284,
+        "brotli": 71.57212622088656
       }
     },
     {
@@ -235,14 +295,14 @@
         "brotli": 10179
       },
       "solidlil": {
-        "raw": 5621,
-        "gzip": 2484,
-        "brotli": 2209
+        "raw": 6212,
+        "gzip": 2693,
+        "brotli": 2398
       },
       "reduction": {
-        "raw": 80.60854865974403,
-        "gzip": 77.81350482315112,
-        "brotli": 78.29845760880244
+        "raw": 78.5697036602615,
+        "gzip": 75.9467667023937,
+        "brotli": 76.44169368307298
       }
     },
     {
@@ -255,14 +315,14 @@
         "brotli": 10627
       },
       "solidlil": {
-        "raw": 7367,
-        "gzip": 3199,
-        "brotli": 2833
+        "raw": 7927,
+        "gzip": 3356,
+        "brotli": 2982
       },
       "reduction": {
-        "raw": 75.8229135899708,
-        "gzip": 72.74663486113478,
-        "brotli": 73.34148866095794
+        "raw": 73.9851005874438,
+        "gzip": 71.40909865394445,
+        "brotli": 71.93939964242024
       }
     },
     {
@@ -275,14 +335,14 @@
         "brotli": 15813
       },
       "solidlil": {
-        "raw": 6690,
-        "gzip": 2926,
-        "brotli": 2623
+        "raw": 7264,
+        "gzip": 3114,
+        "brotli": 2790
       },
       "reduction": {
-        "raw": 85.85713379701076,
-        "gzip": 83.27235307569174,
-        "brotli": 83.4123822171631
+        "raw": 84.64368010485592,
+        "gzip": 82.19757603475874,
+        "brotli": 82.3562891291975
       }
     },
     {
@@ -295,14 +355,14 @@
         "brotli": 10835
       },
       "solidlil": {
-        "raw": 9944,
-        "gzip": 3763,
-        "brotli": 3381
+        "raw": 10597,
+        "gzip": 3987,
+        "brotli": 3568
       },
       "reduction": {
-        "raw": 68.21073495092868,
-        "gzip": 68.42061094326955,
-        "brotli": 68.79556991232118
+        "raw": 66.12320577986637,
+        "gzip": 66.54078549848943,
+        "brotli": 67.06968158744809
       }
     },
     {
@@ -315,14 +375,14 @@
         "brotli": 11361
       },
       "solidlil": {
-        "raw": 9498,
-        "gzip": 4034,
-        "brotli": 3590
+        "raw": 10230,
+        "gzip": 4228,
+        "brotli": 3767
       },
       "reduction": {
-        "raw": 70.57438503005142,
-        "gzip": 67.86937475109518,
-        "brotli": 68.4006689551976
+        "raw": 68.30658652952475,
+        "gzip": 66.32417363600159,
+        "brotli": 66.8427075081419
       }
     },
     {
@@ -335,14 +395,14 @@
         "brotli": 11750
       },
       "solidlil": {
-        "raw": 10885,
-        "gzip": 4579,
-        "brotli": 4077
+        "raw": 11709,
+        "gzip": 4830,
+        "brotli": 4322
       },
       "reduction": {
-        "raw": 67.6147689744429,
-        "gzip": 64.72808504082576,
-        "brotli": 65.30212765957447
+        "raw": 65.16319062211777,
+        "gzip": 62.79463873054999,
+        "brotli": 63.217021276595744
       }
     },
     {
@@ -355,14 +415,14 @@
         "brotli": 10916
       },
       "solidlil": {
-        "raw": 9074,
-        "gzip": 3921,
-        "brotli": 3471
+        "raw": 9776,
+        "gzip": 4130,
+        "brotli": 3677
       },
       "reduction": {
-        "raw": 70.75544669330927,
-        "gzip": 67.37665363174973,
-        "brotli": 68.20263832905826
+        "raw": 68.49297408792059,
+        "gzip": 65.6377402446127,
+        "brotli": 66.3155001832173
       }
     },
     {
@@ -375,14 +435,14 @@
         "brotli": 10281
       },
       "solidlil": {
-        "raw": 6465,
-        "gzip": 2817,
-        "brotli": 2492
+        "raw": 6890,
+        "gzip": 2982,
+        "brotli": 2630
       },
       "reduction": {
-        "raw": 77.86868410242366,
-        "gzip": 75.13899920571883,
-        "brotli": 75.76111273222449
+        "raw": 76.41380254689854,
+        "gzip": 73.68281705056923,
+        "brotli": 74.41883085302986
       }
     },
     {
@@ -395,14 +455,14 @@
         "brotli": 9827
       },
       "solidlil": {
-        "raw": 4287,
-        "gzip": 1997,
-        "brotli": 1752
+        "raw": 4583,
+        "gzip": 2088,
+        "brotli": 1832
       },
       "reduction": {
-        "raw": 84.56192156721524,
-        "gzip": 81.46119569253621,
-        "brotli": 82.17156812862521
+        "raw": 83.49598473117506,
+        "gzip": 80.61641292239139,
+        "brotli": 81.35748448153048
       }
     },
     {
@@ -415,14 +475,14 @@
         "brotli": 9979
       },
       "solidlil": {
-        "raw": 5301,
-        "gzip": 2315,
-        "brotli": 2039
+        "raw": 5833,
+        "gzip": 2500,
+        "brotli": 2198
       },
       "reduction": {
-        "raw": 81.33319247834353,
-        "gzip": 78.88544326887997,
-        "brotli": 79.56709089087083
+        "raw": 79.45982111416296,
+        "gzip": 77.1981028821598,
+        "brotli": 77.97374486421485
       }
     }
   ],
@@ -453,117 +513,118 @@
     }
   },
   "jsFrameworkBenchmark": {
-    "source": "https://github.com/krausest/js-framework-benchmark",
+    "source": "https://github.com/krausest/js-framework-benchmark.git",
     "commit": "afe7c118dd217ccae4c10813613ac0d7566b1ef1",
     "browser": "Google Chrome 151.0.7922.169",
     "blocks": 15,
     "cpuThrottling": true,
     "geomean": {
-      "cpu": 0.9210485652429203,
-      "cpuSameApp": 0.9893457456357886
+      "cpu": 1.043189600554008,
+      "cpuSameApp": 1.043189600554008
     },
     "notes": {
-      "cpuSameApp": "Geometric mean of the eight keyed workloads that use the same algorithm as official Solid 2.0. Select is excluded: that run used createSelector, while Solid 2.0's official JFB entry reads selected() on every row.",
-      "select": "04_select1k used createSelector (Solid 1.9 official style). Solid 2.0 official uses selected() === rowId on all 1,000 rows. 0.52× is not a same-app number."
+      "cpuSameApp": "Geometric mean of all nine keyed workloads. Both sides read selected() on every row — same algorithm as official Solid 2.0.",
+      "select": "04_select1k reads selected() on every row on both sides."
     },
+    "selectSameApp": true,
     "sizes": {
       "solid": {
-        "raw": 33701,
-        "gzip": 12546,
-        "brotli": 11420
+        "raw": 32159,
+        "gzip": 12318,
+        "brotli": 11180
       },
       "solidlil": {
-        "raw": 10020,
-        "gzip": 4077,
-        "brotli": 3609
+        "raw": 9814,
+        "gzip": 4059,
+        "brotli": 3606
       }
     },
     "cpu": [
       {
         "id": "01_run1k",
         "name": "Create 1,000 rows",
-        "solid": 25.796,
-        "solidlil": 26.575,
-        "ratio": 1.0301984803845556
+        "solid": 25.532,
+        "solidlil": 26.334,
+        "ratio": 1.03141156196146
       },
       {
         "id": "02_replace1k",
         "name": "Replace 1,000 rows",
-        "solid": 29.615,
-        "solidlil": 29.23,
-        "ratio": 0.9869998311666386
+        "solid": 29.08,
+        "solidlil": 31.696,
+        "ratio": 1.0899587345254471
       },
       {
         "id": "03_update10th1k_x16",
         "name": "Update every 10th row ×16",
-        "solid": 18.729,
-        "solidlil": 17.569,
-        "ratio": 0.9380639649741043
+        "solid": 19.17,
+        "solidlil": 18.401,
+        "ratio": 0.959885237350026
       },
       {
         "id": "04_select1k",
         "name": "Select a row",
-        "solid": 8.855,
-        "solidlil": 4.602,
-        "ratio": 0.5197063805759458
+        "solid": 9.071,
+        "solidlil": 8.927,
+        "ratio": 0.984125234263036
       },
       {
         "id": "05_swap1k",
         "name": "Swap two rows",
-        "solid": 21.512,
-        "solidlil": 20.815,
-        "ratio": 0.9675994793603571
+        "solid": 21.035,
+        "solidlil": 21.191,
+        "ratio": 1.0074162110767768
       },
       {
         "id": "06_remove-one-1k",
         "name": "Remove one row",
-        "solid": 14.727,
-        "solidlil": 14.61,
-        "ratio": 0.9920554084334895
+        "solid": 15.279,
+        "solidlil": 15.384,
+        "ratio": 1.0068721774985274
       },
       {
         "id": "07_create10k",
         "name": "Create 10,000 rows",
-        "solid": 286.949,
-        "solidlil": 294.179,
-        "ratio": 1.0251961149890745
+        "solid": 288.171,
+        "solidlil": 326.923,
+        "ratio": 1.1344757106023855
       },
       {
         "id": "08_create1k-after1k_x2",
         "name": "Append 1,000 rows ×2",
-        "solid": 30.579,
-        "solidlil": 32.226,
-        "ratio": 1.0538604924948494
+        "solid": 30.453,
+        "solidlil": 33.1,
+        "ratio": 1.0869208288181789
       },
       {
         "id": "09_clear1k_x8",
         "name": "Clear 1,000 rows ×8",
-        "solid": 13.672,
-        "solidlil": 12.686,
-        "ratio": 0.9278818022235225
+        "solid": 13.41,
+        "solidlil": 14.771,
+        "ratio": 1.1014914243102163
       }
     ],
     "memory": [
       {
         "id": "21_ready-memory",
         "name": "Ready memory",
-        "solid": 1.158609390258789,
-        "solidlil": 1.0596752166748047,
-        "ratio": 0.9146095531282668
+        "solid": 1.1591110229492188,
+        "solidlil": 1.0678768157958984,
+        "ratio": 0.9212895008787115
       },
       {
         "id": "22_run-memory",
         "name": "Memory with 1,000 rows",
-        "solid": 3.184083938598633,
-        "solidlil": 4.11912727355957,
-        "ratio": 1.293661647428951
+        "solid": 3.1838836669921875,
+        "solidlil": 4.068037986755371,
+        "ratio": 1.2776968043554315
       },
       {
         "id": "25_run-clear-memory",
         "name": "Memory after five create/clear cycles",
-        "solid": 1.4616832733154297,
-        "solidlil": 2.164487838745117,
-        "ratio": 1.4808186412611586
+        "solid": 1.4651336669921875,
+        "solidlil": 2.1781387329101562,
+        "ratio": 1.4866484758224934
       }
     ]
   }

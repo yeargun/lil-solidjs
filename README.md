@@ -2,34 +2,34 @@
 
 Solid 2.0’s client runtime, compiled with LilScript and published as `@itslil/solidjs`. Source: [github.com/yeargun/lil-solidjs](https://github.com/yeargun/lil-solidjs).
 
-**Official [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) keyed table: 68.4% smaller Brotli (11,420 B → 3,609 B)** and **0.99×** CPU on the eight same-app workloads. That is one Vite + terser app — Solid’s client plus the jumbotron — not a reconstructed `export *` vendor. Live apps, raw / gzip-9 / Brotli-11 sizes, and measured performance are on the **[solidlil demo lab](https://yeargun.github.io/solidlil/)**. 18 paired browser demos are closed-world LSX extras, not the typical ship.
+**Official [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) keyed table: 67.7% smaller Brotli (11,180 B → 3,606 B)** and **1.04×** CPU across all nine same-app workloads. That is one Vite + terser app — Solid’s client plus the jumbotron — not a reconstructed `export *` vendor. Live apps, raw / gzip-9 / Brotli-11 sizes, and measured performance are on the **[solidlil demo lab](https://yeargun.github.io/solidlil/)**. The paired browser demos are closed-world LSX extras, not the typical ship.
 
 | Reproducible result | Solid 2.0 | `@itslil/solidjs` | Ratio | Reduction |
 | --- | ---: | ---: | ---: | ---: |
-| [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) keyed table, JS Brotli-11 | 11,420 B | 3,609 B | 0.316× | **68.4%** |
-| Same keyed table, gzip-9 | 12,546 B | 4,077 B | 0.325× | **67.5%** |
-| Same keyed table, raw JS | 33,701 B | 10,020 B | 0.297× | **70.3%** |
+| [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) keyed table, JS Brotli-11 | 11,180 B | 3,606 B | 0.323× | **67.7%** |
+| Same keyed table, gzip-9 | 12,318 B | 4,059 B | 0.330× | **67.0%** |
+| Same keyed table, raw JS | 32,159 B | 9,814 B | 0.305× | **69.5%** |
 
 The size that matters is the official keyed app: one vendor chunk plus that table, Solid JSX versus LSX, both `cloneNode` templates, then terser. A named-import `solid-js` bundle without the app is already ~10 kB Brotli; `export *` is ~35 kB because it keeps unused `@solidjs/signals` modules. Neither is a substitute for the JFB payload. Closed-world demo totals count Solid’s client once per file and let LilScript delete unused runtime; they overstate the gap.
 
-Official [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) CPU, same machine, Chrome 151, 15 blocks, CPU throttling on. Same jumbotron table: Solid’s JSX and solidlil’s LSX both compile to `cloneNode` templates. Same-app geometric mean of the eight matching workloads is **0.99×** Solid 2.0. The nine-workload geomean is 0.92× only because that run used `createSelector` for select; Solid 2.0’s official entry reads `selected()` on every row.
+Official [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark) CPU, same machine, Chrome 151, 15 blocks, CPU throttling on. Same jumbotron table: Solid’s JSX and solidlil’s LSX both compile to `cloneNode` templates, and both read `selected()` on every row. Geometric mean of all nine workloads is **1.04×** Solid 2.0.
 
 | Keyed workload | Solid 2.0 | @itslil/solidjs | Ratio |
 | --- | ---: | ---: | ---: |
-| Create 1,000 rows | 25.8 ms | 26.6 ms | 1.03× |
-| Replace 1,000 rows | 29.6 ms | 29.2 ms | **0.99×** |
-| Update every 10th ×16 | 18.7 ms | 17.6 ms | **0.94×** |
-| Select a row | 8.9 ms | 4.6 ms | **0.52×** |
-| Swap two rows | 21.5 ms | 20.8 ms | **0.97×** |
-| Remove one row | 14.7 ms | 14.6 ms | **0.99×** |
-| Create 10,000 rows | 287.0 ms | 294.2 ms | 1.03× |
-| Append 1,000 ×2 | 30.6 ms | 32.2 ms | 1.05× |
-| Clear 1,000 ×8 | 13.7 ms | 12.7 ms | **0.93×** |
-| JS Brotli-11 | 11,420 B | 3,609 B | **0.32×** |
-| JS raw | 33,701 B | 10,020 B | **0.30×** |
-| Ready memory | 1.16 MB | 1.06 MB | **0.92×** |
-| Memory with 1,000 rows | 3.18 MB | 4.12 MB | 1.29× |
-| Memory after five create/clear cycles | 1.46 MB | 2.16 MB | 1.48× |
+| Create 1,000 rows | 25.5 ms | 26.3 ms | 1.03× |
+| Replace 1,000 rows | 29.1 ms | 31.7 ms | 1.09× |
+| Update every 10th ×16 | 19.2 ms | 18.4 ms | **0.96×** |
+| Select a row | 9.1 ms | 8.9 ms | **0.98×** |
+| Swap two rows | 21.0 ms | 21.2 ms | 1.01× |
+| Remove one row | 15.3 ms | 15.4 ms | 1.01× |
+| Create 10,000 rows | 288.2 ms | 326.9 ms | 1.13× |
+| Append 1,000 ×2 | 30.5 ms | 33.1 ms | 1.09× |
+| Clear 1,000 ×8 | 13.4 ms | 14.8 ms | 1.10× |
+| JS Brotli-11 | 11,180 B | 3,606 B | **0.32×** |
+| JS raw | 32,159 B | 9,814 B | **0.31×** |
+| Ready memory | 1.16 MB | 1.07 MB | **0.92×** |
+| Memory with 1,000 rows | 3.18 MB | 4.07 MB | 1.28× |
+| Memory after five create/clear cycles | 1.47 MB | 2.18 MB | 1.49× |
 
 ```sh
 npm install @itslil/solidjs
@@ -84,15 +84,17 @@ The JFB cut is not “Vite property-mangled Solid harder,” and it is not a thi
 
 **Same templates, thinner For.** Both jumbotrons compile to `cloneNode` HTML. Solid JSX uses [`template().cloneNode`](https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-web/src/index.ts) and [`For`](https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid/src/client/flow.ts). LSX does the same in [lilx/lower.mjs](https://github.com/yeargun/lil-solidjs/blob/main/tooling/lilx/lower.mjs) → [web.lil](https://github.com/yeargun/lil-solidjs/blob/main/src/web.lil) `keyedEach` / [lsx.lil](https://github.com/yeargun/lil-solidjs/blob/main/src/lsx.lil). Compare [JFB Solid JSX](https://github.com/yeargun/lil-solidjs/blob/main/benchmarks/js-framework-benchmark/keyed/solid-v2/src/main.jsx) with [JFB LSX](https://github.com/yeargun/lil-solidjs/blob/main/benchmarks/js-framework-benchmark/keyed/solidlil/src/main.lilx).
 
-**Same flush, same pending.** Solid’s [scheduler.ts](https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/scheduler.ts) is microtask flush plus effect queues; ours is `pendingWrites` / render / user / settled and `flush()` in [reactive.lil](https://github.com/yeargun/lil-solidjs/blob/main/src/reactive.lil). Solid’s [async.ts](https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/async.ts) is NotReady plus pending; ours is `asyncPending`, `isPending`, `latest`, `action`, `createOptimistic`, and `<Loading>` in [web.lil](https://github.com/yeargun/lil-solidjs/blob/main/src/web.lil). Official JFB calls `render()` on both sides. That number is the same client app.
+**Same flush, same pending.** The port is the 2.0 authoring surface: microtask `flush`, split effects, `For` / `Reveal` / `Loading`, stores, `createProjection`, `action` / `createOptimistic`, `isPending` / `latest`, `hydrate`. Solid’s [scheduler.ts](https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/scheduler.ts) is the flush; ours is `pendingWrites` and `flush()` in [reactive.lil](https://github.com/yeargun/lil-solidjs/blob/main/src/reactive.lil). Solid’s [async.ts](https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/async.ts) is NotReady plus pending; ours is the same verbs in [web.lil](https://github.com/yeargun/lil-solidjs/blob/main/src/web.lil). Official JFB calls `render()` on both sides.
 
-**Tooling.** [LilScript](https://github.com/yeargun/lilscript) types the program and searches JS against Brotli ([show-hn](https://github.com/yeargun/lilscript/blob/main/docs/show-hn.md), [mangle / ABI](https://github.com/yeargun/lilscript/blob/main/docs/configuration.md)). **LSX** (`.lilx`) is JSX for that language: [parse-jsx.mjs](https://github.com/yeargun/lil-solidjs/blob/main/tooling/lilx/parse-jsx.mjs) then `lower.mjs`. The [lab](https://yeargun.github.io/solidlil/) hero is official JFB. The 18 paired iframes are closed-world extras — they delete unused runtime per file and overstate the gap. `npm install @itslil/solidjs` is the reusable ESM vendor chunk, not those demos summed.
+**Tree-shaking is the fair size.** Solid sizes a shaken app (`sideEffects: false`). Official JFB is that method — one vendor chunk plus the jumbotron. Unfair: `export *`, adding published flat `web.js`, or summing the lab iframes (that counts Solid once per file). Lil closed-world DCE can drop more than Vite can prove unused; Solid keeps promise/`createMemo` async rails in every Solid build. Those APIs still exist here. The lab’s Async 2.0 pairs exercise them.
+
+**Tooling.** [LilScript](https://github.com/yeargun/lilscript) types the program and searches JS against Brotli ([show-hn](https://github.com/yeargun/lilscript/blob/main/docs/show-hn.md), [mangle / ABI](https://github.com/yeargun/lilscript/blob/main/docs/configuration.md)). **LSX** (`.lilx`) is JSX for that language: [parse-jsx.mjs](https://github.com/yeargun/lil-solidjs/blob/main/tooling/lilx/parse-jsx.mjs) then `lower.mjs`. The [lab](https://yeargun.github.io/solidlil/) hero is official JFB. The paired iframes are closed-world extras. `npm install @itslil/solidjs` is the reusable ESM vendor chunk, not those demos summed.
 
 ## What “smaller” means
 
-A normal client app vendors the framework once, then adds modules. The number on this page is that model: official js-framework-benchmark. Official keyed Solid **1.9** is 11,563 B raw; Solid **2.0** is 33,701 B raw / 11,420 B Brotli-11; `@itslil/solidjs` LSX is 10,020 B raw / 3,609 B Brotli-11.
+A normal client app vendors the framework once, then adds modules. The number on this page is that model: official js-framework-benchmark. Official keyed Solid **1.9** is 11,563 B raw; Solid **2.0** is 32,159 B raw / 11,180 B Brotli-11; `@itslil/solidjs` LSX is 9,814 B raw / 3,606 B Brotli-11.
 
-The 18 lab demos are closed-world LSX builds of the same UI. They are not how a typical Solid or React app is shipped. Use the js-framework-benchmark keyed row.
+The lab demos are closed-world LSX builds of the same UI. They are not how a typical Solid or React app is shipped. Use the js-framework-benchmark keyed row.
 
 CPU is not inferred from size. The lab’s Playwright medians (`npm run bench:perf`) are a small demo; the krausest harness (throttled Chrome, 15 blocks) is the number that should be compared to other frameworks.
 

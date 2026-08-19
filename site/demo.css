@@ -39,6 +39,7 @@ ul, ol { margin: 0; padding: 0; list-style: none; }
 }
 .muted { color: var(--muted); font-size: 13px; }
 .danger { background: #ffe3e0; }
+.stale { opacity: .55; }
 .count-btn { font-weight: 800; min-width: 140px; }
 .todo-item { display: flex; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--line); }
 .todo-item.done span { text-decoration: line-through; color: var(--muted); }

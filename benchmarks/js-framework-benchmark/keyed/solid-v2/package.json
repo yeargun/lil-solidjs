@@ -1,0 +1,25 @@
+{
+  "name": "js-framework-benchmark-solid-v2",
+  "version": "2.0.0-rc.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "js-framework-benchmark": {
+    "frameworkVersionFromPackage": "solid-js",
+    "frameworkHomeURL": "https://www.solidjs.com/",
+    "language": "JavaScript"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build-prod": "vite build"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@solidjs/web": "2.0.0-rc.0",
+    "solid-js": "2.0.0-rc.0"
+  },
+  "devDependencies": {
+    "@solidjs/vite-plugin": "3.0.0-next.30",
+    "vite": "8.2.1"
+  }
+}

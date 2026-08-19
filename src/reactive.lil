@@ -183,11 +183,12 @@ export class Signal<T> {
   }
 
   T read() {
-    if (this.asyncPending && throwOnPending) {
-      throw "NotReady";
-    }
     if (activeListenerId >= 0) {
       this.subscribe(activeListenerId);
+    }
+    if (this.asyncPending && throwOnPending) {
+      subscribeAncestorEffects(this);
+      throw "NotReady";
     }
     return this.committed;
   }
@@ -248,9 +249,30 @@ export class Signal<T> {
   }
 }
 
+void subscribeAncestorEffects<T>(Signal<T> signal) {
+  int current = -1;
+  if (activeListenerId >= 0 && activeListenerId < effects.length) {
+    Effect effect = effects[activeListenerId];
+    if (effect.parentKind == 1) {
+      current = effect.parentId;
+    }
+  }
+  while (current >= 0 && current < effects.length) {
+    signal.subscribe(current);
+    Effect parent = effects[current];
+    if (parent.parentKind != 1) {
+      break;
+    }
+    current = parent.parentId;
+  }
+}
+
 void notifyObservers(int[] observerIds) {
   for (int index = 0; index < observerIds.length; index++) {
     queueEffect(observerIds[index]);
+  }
+  if (observerIds.length > 0) {
+    scheduleFlush();
   }
 }
 

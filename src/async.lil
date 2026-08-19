@@ -1,0 +1,6 @@
+import extern { delayString as hostDelayString } from "./async-host.js";
+extern Task<string> hostDelayString(string value, int ms);
+
+export Task<string> delayString(string value, int ms) {
+  return hostDelayString(value, ms);
+}

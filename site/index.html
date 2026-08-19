@@ -3,11 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="solidlil: Solid 2.0 through LilScript. Official js-framework-benchmark keyed table 68% smaller Brotli, CPU at Solid 2.0." />
+    <meta name="description" content="solidlil: Solid 2.0 through LilScript. Official js-framework-benchmark keyed table 67.7% smaller Brotli, CPU at Solid 2.0." />
     <meta name="theme-color" content="#4fc1ff" />
     <title>solidlil — Solid 2.0, compressed through LilScript</title>
-    <link rel="stylesheet" href="./styles.css?v=full2" />
-    <script type="module" src="./app.js?v=full2"></script>
+    <link rel="stylesheet" href="./styles.css?v=async2" />
+    <script type="module" src="./app.js?v=async2"></script>
   </head>
   <body>
     <div class="progress" aria-hidden="true"></div>
@@ -51,7 +51,7 @@
             <div><strong id="score-jfb-gzip">—</strong><span>JFB gzip-9</span></div>
             <div><strong id="score-jfb-cpu">—</strong><span>JFB CPU · same app</span></div>
             <div><strong id="score-jfb-raw">—</strong><span>JFB raw JS</span></div>
-            <div><strong id="score-jfb-select">—</strong><span>select · not same app</span></div>
+            <div><strong id="score-jfb-select">—</strong><span>select · same app</span></div>
           </div>
           <p class="score-note">JFB is one Vite vendor chunk plus the keyed table — the way a Solid app ships. Closed-world demos below delete unused runtime per file and overstate the gap.</p>
         </div>
@@ -63,7 +63,7 @@
             <p class="eyebrow">js-framework-benchmark · Chrome 151</p>
             <h2>CPU versus<br />Solid 2.0.</h2>
           </div>
-          <p>Official keyed jumbotron, 15 blocks, CPU throttling. Same table: Solid JSX vs LSX, both <code>cloneNode</code> templates. Eight of nine workloads are at Solid 2.0 (<strong>0.99×</strong> geomean). Select looks faster only because that run used <code>createSelector</code>; Solid 2.0’s official entry reads <code>selected()</code> on every row.</p>
+          <p>Official keyed jumbotron, 15 blocks, CPU throttling. Same table: Solid JSX vs LSX, both <code>cloneNode</code> templates. Both sides read <code>selected()</code> on every row — nine same-app workloads, not a <code>createSelector</code> shortcut.</p>
         </div>
         <div class="perf-cards" id="perf-cards"></div>
         <div class="table-wrap light">
@@ -88,34 +88,13 @@
             <p class="eyebrow">Why smaller</p>
             <h2>Not a harder<br />minifier.</h2>
           </div>
-          <p>The JFB gap is not Vite property-mangling Solid harder, and it is not a thinner API. Solid 2.0 already shortens internal keys at publish time. LilScript wins because it lowers the same typed client: owned fields become slots, host names stay exact.</p>
+          <p>Three things get mixed together in size arguments: whether the client still behaves like Solid 2.0, how that graph is spelled in JS, and what a bundler is allowed to delete. The fair number is one Vite app — official js-framework-benchmark — not a reconstructed vendor and not these demos added up.</p>
         </div>
 
         <div class="why-grid">
           <article>
-            <h3>Owned fields become slots</h3>
-            <p>Solid’s reactive graph is objects. A signal/owner carries many named fields — even after <code>^_</code> mangling they stay <code>e.se</code>, <code>e.Ne</code>. LilScript structs lower to numeric slots (<code>e[0]</code>, <code>e[1]</code>). <code>extern class</code> members like <code>textContent</code> stay. Terser cannot prove that.</p>
-            <p class="why-links">
-              <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/core.ts">Solid <code>core.ts</code></a>
-              <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/owner.ts">Solid <code>owner.ts</code></a>
-              <a href="https://github.com/yeargun/lil-solidjs/blob/main/src/reactive.lil">ours <code>reactive.lil</code></a>
-              <a href="https://github.com/yeargun/lil-solidjs/blob/main/src/lilscript.closed.toml">ours <code>lilscript.closed.toml</code></a>
-            </p>
-          </article>
-          <article>
-            <h3>Same templates, thinner For</h3>
-            <p>Both apps compile the jumbotron to <code>cloneNode</code> HTML templates. Solid JSX does that in <code>@solidjs/web</code>. LSX does it in the <code>lilx</code> lowerer, then <code>keyedEach</code> reconciles rows. The UI spelling matches; <code>keyedEach</code> is the For reconcile, not a different list model.</p>
-            <p class="why-links">
-              <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-web/src/index.ts">Solid <code>web/index.ts</code></a>
-              <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid/src/client/flow.ts">Solid <code>For</code></a>
-              <a href="https://github.com/yeargun/lil-solidjs/blob/main/tooling/lilx/lower.mjs">ours <code>lilx/lower.mjs</code></a>
-              <a href="https://github.com/yeargun/lil-solidjs/blob/main/src/web.lil">ours <code>web.lil</code></a>
-              <a href="https://github.com/yeargun/lil-solidjs/blob/main/src/lsx.lil">ours <code>lsx.lil</code></a>
-            </p>
-          </article>
-          <article>
             <h3>Same flush, same pending</h3>
-            <p>Solid’s <code>scheduler.ts</code> is the microtask flush plus effect queues. Ours is <code>pendingWrites</code>, render/user/settled queues, and <code>flush()</code> in <code>reactive.lil</code>. Solid’s <code>async.ts</code> is NotReady plus pending; ours is <code>asyncPending</code>, <code>isPending</code>, <code>latest</code>, <code>action</code>, <code>createOptimistic</code>, and <code>&lt;Loading&gt;</code>. Official JFB calls <code>render()</code> on both sides. That row is the same client app, not a cut-down port.</p>
+            <p>The port is the 2.0 authoring surface: microtask <code>flush</code>, split effects, <code>For</code> / <code>Show</code> / <code>Reveal</code> / <code>Loading</code>, stores, <code>createProjection</code>, <code>action</code> / <code>createOptimistic</code>, <code>isPending</code> / <code>latest</code>, <code>hydrate</code>. The new Async 2.0 pairs are the same JSX on the left and LSX on the right. Official JFB still calls <code>render()</code> on both sides — that row is the same keyed table, not a cut-down port.</p>
             <p class="why-links">
               <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/scheduler.ts">Solid <code>scheduler.ts</code></a>
               <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/async.ts">Solid <code>async.ts</code></a>
@@ -124,13 +103,33 @@
             </p>
           </article>
           <article>
-            <h3>Two ways we ship</h3>
-            <p>The JFB / lab LSX apps are closed-world: one LilScript graph, unused functions deleted, exports mangled. <code>npm install @itslil/solidjs</code> is the reusable ESM — larger than a demo, still the one vendor chunk a JS app pays. Do not add the 18 demo rows; that counts Solid 18 times.</p>
+            <h3>Owned fields become slots</h3>
+            <p>The JFB gap is not a meaner minifier. Solid 2.0 already shortens internal keys at publish time. Extra Terser property-mangle on the keyed app is a couple hundred Brotli bytes. The rest is representation: Solid’s graph is objects (<code>e.se</code>, <code>e.Ne</code> after <code>^_</code>). LilScript structs lower to slots (<code>e[0]</code>, <code>e[1]</code>). <code>extern class</code> names like <code>textContent</code> stay exact. Terser cannot prove ownership.</p>
             <p class="why-links">
+              <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/core.ts">Solid <code>core.ts</code></a>
+              <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/owner.ts">Solid <code>owner.ts</code></a>
+              <a href="https://github.com/yeargun/lil-solidjs/blob/main/src/reactive.lil">ours <code>reactive.lil</code></a>
+              <a href="https://github.com/yeargun/lil-solidjs/blob/main/src/lilscript.closed.toml">ours <code>lilscript.closed.toml</code></a>
+            </p>
+          </article>
+          <article>
+            <h3>Tree-shaking is the fair size</h3>
+            <p>Solid sizes a tree-shaken app (<code>sideEffects: false</code>, pay-for-use). Official JFB is that method: one vendor chunk plus the jumbotron. The Solid keyed bundle does not contain <code>hydrate</code> / <code>createOptimistic</code> / <code>isPending</code> strings; neither does the LSX one. Unfair: <code>export *</code> (~35 kB Brotli), adding published flat <code>web.js</code>, or summing these iframes (that counts Solid once per file). Fair: the JFB row.</p>
+            <p class="why-links">
+              <a href="https://github.com/krausest/js-framework-benchmark">js-framework-benchmark</a>
+              <a href="https://github.com/solidjs/solid/issues/2883">Solid #2883 on package vs app size</a>
               <a href="https://github.com/yeargun/lil-solidjs/blob/main/benchmarks/js-framework-benchmark/keyed/solid-v2/src/main.jsx">JFB Solid JSX</a>
               <a href="https://github.com/yeargun/lil-solidjs/blob/main/benchmarks/js-framework-benchmark/keyed/solidlil/src/main.lilx">JFB LSX</a>
-              <a href="https://github.com/yeargun/lil-solidjs/blob/main/apps/keyed/solid/main.jsx">lab Solid</a>
-              <a href="https://github.com/yeargun/lil-solidjs/blob/main/apps/keyed/solidlil/main.lilx">lab LSX</a>
+            </p>
+          </article>
+          <article>
+            <h3>Same templates, thinner For</h3>
+            <p>Both jumbotrons compile to <code>cloneNode</code> HTML. Solid JSX does that in <code>@solidjs/web</code>; LSX does it in the <code>lilx</code> lowerer, then <code>keyedEach</code>. The remaining asterisk is proof, not APIs: Lil closed-world DCE can drop more than Vite can prove unused, and Solid keeps promise/<code>createMemo</code> async rails in every Solid build. Those APIs still exist on this package — the lab’s Async 2.0 pairs exercise them.</p>
+            <p class="why-links">
+              <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-web/src/index.ts">Solid <code>web/index.ts</code></a>
+              <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid/src/client/flow.ts">Solid <code>For</code></a>
+              <a href="https://github.com/yeargun/lil-solidjs/blob/main/tooling/lilx/lower.mjs">ours <code>lilx/lower.mjs</code></a>
+              <a href="https://github.com/yeargun/lil-solidjs/blob/main/src/lsx.lil">ours <code>lsx.lil</code></a>
             </p>
           </article>
         </div>
@@ -164,12 +163,13 @@
             <p class="eyebrow">Solid 2.0 vs solidlil, live</p>
             <h2>The complete<br />client lab.</h2>
           </div>
-          <p>These pairs are closed-world: LilScript can delete unused runtime per demo. A real Solid app is one vendor chunk plus modules — that is the JFB keyed table on top, not these 18 rows summed.</p>
+          <p>Left iframe is official Solid 2.0 JSX. Right iframe is the same UI in LSX. Async 2.0 is <code>createMemo</code> + <code>Loading</code>, <code>action</code> / <code>createOptimistic</code>, sequential <code>Reveal</code>, and <code>createProjection</code> — both runtimes, same markup. These pairs are closed-world extras — LilScript can delete unused runtime per file — so do not add the rows. A real Solid app is one vendor chunk plus modules: the JFB keyed table above.</p>
         </div>
 
         <div class="filters" role="group" aria-label="Filter demos">
           <button class="active" data-filter="all" type="button">All</button>
           <button data-filter="reactive" type="button">Reactive</button>
+          <button data-filter="async" type="button">Async 2.0</button>
           <button data-filter="control" type="button">Control flow</button>
           <button data-filter="apps" type="button">Apps</button>
           <button data-filter="performance" type="button">Performance</button>
@@ -207,7 +207,7 @@
             </table>
           </div>
           <div class="method-note">
-            <p><strong>How client apps are sized.</strong> The <a href="https://github.com/krausest/js-framework-benchmark">js-framework-benchmark</a> keyed table is one Solid 2.0 app as Vite ships it: 11,420 B → 3,609 B Brotli-11. Summing the 18 demos counts Solid’s client 18 times; LilScript’s closed-world compile deletes unused runtime per file, which is not how those apps ship.</p>
+            <p><strong>How client apps are sized.</strong> The <a href="https://github.com/krausest/js-framework-benchmark">js-framework-benchmark</a> keyed table is one Solid 2.0 app as Vite ships it — tree-shaken, one vendor chunk. Summing the demo rows counts Solid’s client once per file; LilScript’s closed-world compile deletes unused runtime per file. That overstates the gap. Use the JFB row.</p>
             <a href="#why">Why smaller ↗</a>
           </div>
         </div>

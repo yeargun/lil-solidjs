@@ -1,0 +1,67 @@
+import { Signal, append, beginAction, createOptimisticSignal, createStringSignal, endAction, optimisticSet, render } from "solidlil";
+
+class FieldRef {
+  Element? node;
+
+  init() {
+    this.node = null;
+  }
+}
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<string> name = createOptimisticSignal("Ada", (string a, string b) => a == b);
+  Signal<string> draft = createStringSignal("Ada");
+  Signal<string> status = createStringSignal("idle");
+  Signal<bool> failNext = createBoolSignal(true);
+  FieldRef field = new FieldRef();
+  Element view = (
+    <div class="stack">
+      <h2>Optimistic action</h2>
+      <div class="row">
+        <input
+          ref={(Element node) => { field.node = node; }}
+          value={draft.read()}
+          onInput={() => {
+            Element? node = field.node;
+            if (node != null) {
+              draft.write(node.value);
+            }
+          }}
+        />
+        <button class="primary" onClick={() => { save(name, draft, status, failNext); }}>
+          Save
+        </button>
+      </div>
+      <div class="card">
+        <p>{`Shown as ${name.read()}`}</p>
+        <p class="muted">{status.read()}</p>
+      </div>
+    </div>
+  );
+  append(root, view);
+});
+
+void save(
+  Signal<string> name,
+  Signal<string> draft,
+  Signal<string> status,
+  Signal<bool> failNext
+) {
+  if (status.read() == "saving") {
+    return;
+  }
+  beginAction();
+  optimisticSet(name, draft.read());
+  status.write("saving");
+  bool fail = failNext.read();
+  delay(() => {
+    if (fail) {
+      endAction(false);
+      failNext.write(false);
+      status.write("reverted");
+    } else {
+      endAction(true);
+      status.write("saved");
+    }
+  }, 280);
+}

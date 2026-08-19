@@ -1,4 +1,4 @@
-import { Loading, createMemo, createSignal, isPending } from "solid-js"
+import { Loading, createMemo, createSignal, isPending, latest } from "solid-js"
 import { render } from "@solidjs/web"
 
 function fetchProfile(id) {
@@ -18,6 +18,9 @@ function App() {
         Next profile
       </button>
       <div class="card">
+        <p class="muted">
+          {isPending(profile) ? "pending" : "ready"} · latest {latest(profile)}
+        </p>
         <Loading fallback={<p class="muted">Loading profile…</p>}>
           <h3 class={{ stale: isPending(profile) }}>{profile()}</h3>
         </Loading>

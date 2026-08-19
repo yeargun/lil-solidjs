@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Projection</title>
+    <link rel="stylesheet" href="../../demo.css" />
+    <style>
+      body { margin: 0; }
+      .pair { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+      .lane { border-right: 1px solid #d5deea; }
+      .lane header { padding: 10px 14px; font: 700 12px/1.2 ui-monospace, monospace; text-transform: uppercase; }
+      iframe { width: 100%; height: calc(100vh - 38px); border: 0; }
+    </style>
+  </head>
+  <body>
+    <div class="pair">
+      <div class="lane">
+        <header>Solid 2.0 · 47600/17580/15918 B raw/gzip/brotli</header>
+        <iframe src="./solid.html" title="Solid 2.0 Projection"></iframe>
+      </div>
+      <div class="lane">
+        <header>solidlil · 8374/3516/3158 B raw/gzip/brotli</header>
+        <iframe src="./solidlil.html" title="solidlil Projection"></iframe>
+      </div>
+    </div>
+  </body>
+</html>

@@ -289,13 +289,18 @@ export class Region {
   }
 
   void replace(Element[] next) {
+    Element? host = this.marker.parentNode;
+    if (host == null) {
+      return;
+    }
+    this.parent = host;
     while (this.current.length > 0) {
       Element node = this.current[this.current.length - 1];
       this.current.pop();
       removeNode(node);
     }
     for (int index = 0; index < next.length; index++) {
-      insertBefore(this.parent, next[index], this.marker);
+      insertBefore(host, next[index], this.marker);
       this.current.push(next[index]);
     }
   }
@@ -481,6 +486,7 @@ export void dynamicLoading(
 ) {
   Branch branch = new Branch();
   RevealSlot? slot = openRevealSlot();
+  bool resolved = false;
   onCleanup(() => branch.clear());
   createRenderEffect(() => {
     if (slot != null) {
@@ -496,6 +502,7 @@ export void dynamicLoading(
     try {
       Element[] nodes = children();
       target.replace(branch.render(() => nodes));
+      resolved = true;
       if (slot != null) {
         revealSetReady(slot, true);
       }
@@ -503,7 +510,9 @@ export void dynamicLoading(
       if (slot != null) {
         revealSetReady(slot, false);
       }
-      target.replace(branch.render(fallback));
+      if (!resolved) {
+        target.replace(branch.render(fallback));
+      }
     } finally {
       enablePendingThrows(false);
     }

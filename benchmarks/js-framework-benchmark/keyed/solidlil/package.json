@@ -1,0 +1,25 @@
+{
+  "name": "js-framework-benchmark-solidlil-v2",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "js-framework-benchmark": {
+    "frameworkVersion": "0.1.0",
+    "frameworkHomeURL": "https://github.com/yeargun/solidlil",
+    "language": "LilScript LSX"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build-prod": "node scripts/build.mjs",
+    "build-lib": "vite build"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "solidlil": "file:../../../../"
+  },
+  "devDependencies": {
+    "terser": "5.43.1",
+    "vite": "8.2.1"
+  }
+}

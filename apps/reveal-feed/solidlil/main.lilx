@@ -1,0 +1,32 @@
+import { Signal, append, createAsyncMemo, createIntSignal, render } from "solidlil";
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<int> tick = createIntSignal(0);
+  Signal<string> head = createAsyncMemo(
+    "",
+    () => delayString(`Headline #${tick.read() + 1}`, 200),
+    (string a, string b) => a == b
+  );
+  Signal<string> comments = createAsyncMemo(
+    "",
+    () => delayString(`Comments for #${tick.read() + 1}`, 520),
+    (string a, string b) => a == b
+  );
+  Element view = (
+    <div class="stack">
+      <h2>Reveal feed</h2>
+      <button class="primary" onClick={() => { tick.write(tick.read() + 1); }}>
+        Reload
+      </button>
+      <Reveal order="sequential">
+        <Loading fallback={<p class="muted">Head…</p>}>
+          <article class="card">{head.read()}</article>
+        </Loading>
+        <Loading fallback={<p class="muted">Comments…</p>}>
+          <article class="card">{comments.read()}</article>
+        </Loading>
+      </Reveal>
+    </div>
+  );
+  append(root, view);
+});

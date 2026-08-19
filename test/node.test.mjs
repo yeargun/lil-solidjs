@@ -109,6 +109,36 @@ test("public entries export createSelector", () => {
   assert.equal(typeof solidlil.selectorMatch, "function")
 })
 
+test("NotReady from a nested effect wakes the parent Loading effect", async () => {
+  const dispose = solidlil.createRoot((d) => d)
+  let finish
+  const pending = new Promise((done) => {
+    finish = done
+  })
+  const profile = solidlil.createMemo(() => pending.then(() => "Ada"))
+  const boundary = solidlil.createLoadingBoundary(
+    () => {
+      let text
+      solidlil.createRenderEffect(() => {
+        text = profile()
+      })
+      return text
+    },
+    () => "wait",
+  )
+  let view
+  solidlil.createRenderEffect(() => {
+    view = boundary()
+  })
+  assert.equal(view, "wait")
+  finish()
+  await pending
+  await Promise.resolve()
+  await Promise.resolve()
+  assert.equal(view, "Ada")
+  dispose()
+})
+
 test("createMemo settles a thenable and flips isPending", async () => {
   const dispose = solidlil.createRoot((d) => d)
   let finish

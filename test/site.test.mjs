@@ -47,6 +47,7 @@ test("every API used by the live recreations exists in solidlil", () => {
     "createSignal", "createMemo", "createEffect", "flush", "createRoot", "createStore",
     "action", "createOptimistic", "createOptimisticStore", "isPending", "latest", "lazy", "children",
     "createProjection", "reconcile", "mapArray", "createRevealOrder",
+    "createOptimistic", "action", "latest", "isPending",
   ]) {
     assert.equal(typeof runtime[name], "function", `${name} is not callable`)
   }
@@ -89,6 +90,10 @@ test("the generated Pages artifact includes demos, sizes, and performance", asyn
   assert.match(html, /id="why"/)
   assert.match(html, /Why smaller/)
   assert.match(html, /Same flush, same pending/)
+  assert.match(html, /Tree-shaking is the fair size/)
+  assert.match(html, /Owned fields become slots/)
+  assert.match(html, /data-filter="async"/)
+  assert.match(html, /closed-world/)
   assert.doesNotMatch(html, /We never compiled SSR/)
   assert.doesNotMatch(html, /unused @solidjs\/signals/)
   assert.doesNotMatch(html, /ours <code>host\.lil<\/code>/)

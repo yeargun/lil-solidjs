@@ -1,0 +1,72 @@
+import { Signal, Store, append, createMemo, createProjection, createStringSignal, render } from "solidlil";
+
+class Person {
+  int id;
+  string name;
+  string tag;
+
+  init(int id, string name, string tag) {
+    this.id = id;
+    this.name = name;
+    this.tag = tag;
+  }
+}
+
+class FieldRef {
+  Element? node;
+
+  init() {
+    this.node = null;
+  }
+}
+
+Person[] catalog = [
+  new Person(1, "Ada Lovelace", "lang"),
+  new Person(2, "Grace Hopper", "lang"),
+  new Person(3, "Alan Turing", "systems"),
+  new Person(4, "Margaret Hamilton", "systems")
+];
+
+func()->void dispose = render("#app", (Element root) => {
+  Signal<string> query = createStringSignal("");
+  Store<Person[]> view = createProjection([], () => filterPeople(query.read()));
+  Signal<Person[]> rows = createMemo([], () => view.read(), (Person[] a, Person[] b) => false);
+  FieldRef field = new FieldRef();
+  Element frame = (
+    <div class="stack">
+      <h2>Projection</h2>
+      <input
+        ref={(Element node) => { field.node = node; }}
+        value={query.read()}
+        placeholder="filter"
+        onInput={() => {
+          Element? node = field.node;
+          if (node != null) {
+            query.write(node.value);
+          }
+        }}
+      />
+      <For each={rows} keyed={(Person person) => person.id}>
+        {(Person person) => (
+          <div class="todo-item">
+            <strong>{person.name}</strong>
+            <span class="muted">{person.tag}</span>
+          </div>
+        )}
+      </For>
+    </div>
+  );
+  append(root, frame);
+});
+
+Person[] filterPeople(string query) {
+  string needle = query.toLowerCase();
+  Person[] next = [];
+  for (int index = 0; index < catalog.length; index++) {
+    Person person = catalog[index];
+    if (needle.length == 0 || person.name.toLowerCase().includes(needle) || person.tag.includes(needle)) {
+      next.push(person);
+    }
+  }
+  return next;
+}

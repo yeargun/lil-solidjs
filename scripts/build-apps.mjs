@@ -48,6 +48,7 @@ async function compileLil(id) {
     reactiveImport: "../../../src/reactive",
     storeImport: "../../../src/store",
     domImport: "../../../src/lsx",
+    asyncImport: "../../../src/async",
   })
   const out = join(distApps, id, "solidlil.js")
   await mkdir(join(distApps, id), { recursive: true })
@@ -66,8 +67,21 @@ async function compileLil(id) {
     mangle: { toplevel: true, properties: { regex: /^_/, keep_quoted: true } },
     format: { comments: false },
   })
-  await writeFile(out, `${minified.code}\n`)
-  return bytesOf(minified.code)
+  const code = inlineAsyncHost(minified.code)
+  await writeFile(out, `${code}\n`)
+  return bytesOf(code)
+}
+
+function inlineAsyncHost(code) {
+  return code.replace(
+    /import\s*\{([^}]+)\}\s*from\s*["'][^"']*async-host\.js["'];?/,
+    (_, specifiers) => {
+      const local = specifiers.includes(" as ")
+        ? specifiers.split(" as ").pop().trim()
+        : specifiers.trim()
+      return `function ${local}(value,ms){return new Promise((resolve)=>setTimeout(()=>resolve(value),ms))}`
+    },
+  )
 }
 
 async function compileKeyedPerformance() {
@@ -79,6 +93,7 @@ async function compileKeyedPerformance() {
     reactiveImport: "../../../src/reactive",
     storeImport: "../../../src/store",
     domImport: "../../../src/lsx",
+    asyncImport: "../../../src/async",
   })
   const out = join(distApps, "keyed", "solidlil.performance.js")
   const result = spawnSync(

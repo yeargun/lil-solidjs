@@ -1,4 +1,4 @@
-const data = await fetch("./results.json?v=full2").then((response) => {
+const data = await fetch("./results.json?v=async2").then((response) => {
   if (!response.ok) throw new Error(`Unable to load results: ${response.status}`)
   return response.json()
 })
@@ -45,9 +45,15 @@ document.querySelector("#score-jfb-bytes").textContent = jfb
 document.querySelector("#score-jfb-gzip").textContent = pct(jfbGzip)
 document.querySelector("#score-jfb-raw").textContent = pct(jfbRaw)
 const select = jfb?.cpu?.find((row) => row.id === "04_select1k")
+const selectSameApp = jfb?.selectSameApp
+  ?? (select != null && select.ratio >= 0.7 && select.ratio <= 1.4)
 document.querySelector("#score-jfb-select").textContent = select
   ? times(select.ratio)
   : "—"
+const selectLabel = document.querySelector("#score-jfb-select")?.parentElement?.querySelector("span")
+if (selectLabel) {
+  selectLabel.textContent = selectSameApp ? "select · same app" : "select · not same app"
+}
 
 const createRatio = jfb?.geomean?.cpuSameApp
   ?? jfb?.geomean?.cpu
@@ -185,7 +191,7 @@ function renderPerf() {
           <article class="perf-card geo">
             <span>CPU geomean · same app</span>
             <strong>${times(headline)}</strong>
-            <span>8 workloads, select excluded</span>
+            <span>${selectSameApp ? "9 workloads" : "8 workloads, select excluded"}</span>
           </article>
         `)
       }

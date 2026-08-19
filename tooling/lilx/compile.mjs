@@ -99,6 +99,7 @@ const REACTIVE_IMPORTS = [
   "createUserEffect",
   "flush",
   "isPending",
+  "latest",
   "onCleanup",
   "onSettled",
   "provideContext",
@@ -108,6 +109,7 @@ const REACTIVE_IMPORTS = [
 ];
 
 const STORE_IMPORTS = ["Store", "createStore", "createProjection", "storeReconcile"];
+const ASYNC_IMPORTS = ["delayString"];
 
 export function compileLilx(
   source,
@@ -116,6 +118,7 @@ export function compileLilx(
     reactiveImport = "../../../src/reactive",
     storeImport = "../../../src/store",
     domImport = "../../../src/lsx",
+    asyncImport = "../../../src/async",
   } = {},
 ) {
   const context = createCtx();
@@ -169,6 +172,7 @@ export function compileLilx(
     namedImport(usedNames(REACTIVE_IMPORTS, usedSource), reactiveImport),
     namedImport(usedNames(STORE_IMPORTS, usedSource), storeImport),
     namedImport(usedNames(DOM_IMPORTS, usedSource), domImport),
+    namedImport(usedNames(ASYNC_IMPORTS, usedSource), asyncImport),
     ...templates.map((template) => template.line),
   ]
     .filter(Boolean)
