@@ -20,7 +20,7 @@
         <a href="#performance">performance</a>
         <a href="#lab">Demos</a>
         <a href="#evidence">sizes</a>
-        <a href="https://github.com/yeargun/solidjs">GitHub ↗</a>
+        <a href="https://github.com/yeargun/lil-solidjs">GitHub ↗</a>
       </nav>
     </header>
 
@@ -135,7 +135,7 @@
           </div>
           <div class="method-note">
             <p><strong>Important distinction.</strong> Demo sizes are closed-world application builds, where LilScript can delete unused runtime. Solid 2.0’s npm browser entry is already concatenated (<code>dist/solid.js</code> + <code>dist/web.js</code>), so a counter still carries most of the client. The fairer app-sized number is the <a href="https://github.com/krausest/js-framework-benchmark">js-framework-benchmark</a> keyed table: both are the same jumbotron app, Solid’s JSX compiled by the Solid plugin and solidlil’s LSX compiled by LilScript, then terser. 33,701 B vs 10,020 B JS raw (11,420 B vs 3,609 B Brotli-11). The reusable package ESM is a separate artifact from <code>npm run test:size</code>. Performance is measured on that same JFB harness, not inferred from size.</p>
-            <a href="https://github.com/yeargun/solidjs#what-smaller-means">Read the methodology ↗</a>
+            <a href="https://github.com/yeargun/lil-solidjs#what-smaller-means">Read the methodology ↗</a>
           </div>
         </div>
       </section>
@@ -153,7 +153,7 @@
     <footer class="shell">
       <span>@lil/solidjs · MIT</span>
       <span>Solid 2.0 client runtime ported to LilScript</span>
-      <a href="https://github.com/yeargun/solidjs">source ↗</a>
+      <a href="https://github.com/yeargun/lil-solidjs">source ↗</a>
     </footer>
   </body>
 </html>

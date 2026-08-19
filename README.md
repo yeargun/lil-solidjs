@@ -1,6 +1,6 @@
 # @lil/solidjs
 
-Solid 2.0’s client runtime, compiled with LilScript and published as `@lil/solidjs`. Source: [github.com/yeargun/solidjs](https://github.com/yeargun/solidjs).
+Solid 2.0’s client runtime, compiled with LilScript and published as `@lil/solidjs`. Source: [github.com/yeargun/lil-solidjs](https://github.com/yeargun/lil-solidjs).
 
 **Official js-framework-benchmark keyed table: 68.4% smaller Brotli (11,420 B → 3,609 B) and 0.92× CPU versus Solid 2.0.** 18/18 paired browser demos also ship smaller after Brotli (76.3% smaller in total). Solid 2.0 on one side, **LSX** (LilScript JSX) on the other. Live apps, raw / gzip-9 / Brotli-11 sizes, and measured performance are on the **[solidlil demo lab](https://yeargun.github.io/solidlil/)**.
 

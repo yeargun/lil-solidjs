@@ -10,10 +10,10 @@
     "lilscript"
   ],
   "homepage": "https://yeargun.github.io/solidlil/",
-  "bugs": "https://github.com/yeargun/solidjs/issues",
+  "bugs": "https://github.com/yeargun/lil-solidjs/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yeargun/solidjs.git"
+    "url": "git+https://github.com/yeargun/lil-solidjs.git"
   },
   "license": "MIT",
   "publishConfig": {
