@@ -29,18 +29,24 @@ const gzip = data.metrics.gzip
 const raw = data.metrics.raw
 
 const jfb = data.jsFrameworkBenchmark
+const runtime = data.runtime
+const runtimeBrotli = runtime
+  ? runtime.reduction.brotli
+  : (jfb ? (1 - jfb.sizes.solidlil.brotli / jfb.sizes.solid.brotli) * 100 : brotli.weightedReduction)
 const jfbBrotli = jfb
   ? (1 - jfb.sizes.solidlil.brotli / jfb.sizes.solid.brotli) * 100
   : brotli.weightedReduction
 const jfbRaw = jfb
   ? (1 - jfb.sizes.solidlil.raw / jfb.sizes.solid.raw) * 100
   : raw.weightedReduction
+document.querySelector("#score-runtime-brotli").textContent = pct(runtimeBrotli)
+document.querySelector("#score-runtime-bytes").textContent = runtime
+  ? `${formatter.format(runtime.solid.brotli)} B → ${formatter.format(runtime.solidlil.brotli)} B vs Solid 2.0`
+  : "whole client vs @itslil/solidjs/web"
+document.querySelector("#score-runtime-raw").textContent = runtime
+  ? pct(runtime.reduction.raw)
+  : "—"
 document.querySelector("#score-jfb-brotli").textContent = pct(jfbBrotli)
-document.querySelector("#score-jfb-bytes").textContent = jfb
-  ? `${formatter.format(jfb.sizes.solid.brotli)} B → ${formatter.format(jfb.sizes.solidlil.brotli)} B vs Solid 2.0`
-  : "keyed table vs Solid 2.0"
-document.querySelector("#score-wins").innerHTML = `${brotli.wins}<span>/${data.cases}</span>`
-document.querySelector("#score-demo-brotli").textContent = pct(brotli.weightedReduction)
 document.querySelector("#score-jfb-raw").textContent = pct(jfbRaw)
 
 const createRatio = jfb?.geomean?.cpuSameApp
@@ -84,7 +90,37 @@ function renderDemos(filter = "all") {
 }
 
 function renderResults() {
-  const rows = data.examples.map((example) => `
+  const lead = []
+  if (runtime) {
+    lead.push(`
+    <tr>
+      <th scope="row">Client runtime</th>
+      <td>${formatter.format(runtime.solid.raw)}</td>
+      <td>${formatter.format(runtime.solidlil.raw)}</td>
+      <td>${formatter.format(runtime.solid.gzip)}</td>
+      <td>${formatter.format(runtime.solidlil.gzip)}</td>
+      <td>${formatter.format(runtime.solid.brotli)}</td>
+      <td>${formatter.format(runtime.solidlil.brotli)}</td>
+      <td><strong>${pct(runtime.reduction.brotli)}</strong></td>
+    </tr>
+  `)
+  }
+  if (jfb?.sizes) {
+    const jfbReduction = (1 - jfb.sizes.solidlil.brotli / jfb.sizes.solid.brotli) * 100
+    lead.push(`
+    <tr>
+      <th scope="row">JFB keyed table</th>
+      <td>${formatter.format(jfb.sizes.solid.raw)}</td>
+      <td>${formatter.format(jfb.sizes.solidlil.raw)}</td>
+      <td>${formatter.format(jfb.sizes.solid.gzip)}</td>
+      <td>${formatter.format(jfb.sizes.solidlil.gzip)}</td>
+      <td>${formatter.format(jfb.sizes.solid.brotli)}</td>
+      <td>${formatter.format(jfb.sizes.solidlil.brotli)}</td>
+      <td><strong>${pct(jfbReduction)}</strong></td>
+    </tr>
+  `)
+  }
+  const rows = lead.concat(data.examples.map((example) => `
     <tr>
       <th scope="row">${example.title}</th>
       <td>${formatter.format(example.solid.raw)}</td>
@@ -109,14 +145,19 @@ function renderResults() {
     </tr>
   `)
   resultsBody.innerHTML = rows.join("")
-  const width = Math.max(18, Math.min(100, (brotli.solidlil / brotli.solid) * 100))
+  const solidBrotli = runtime ? runtime.solid.brotli : brotli.solid
+  const lilBrotli = runtime ? runtime.solidlil.brotli : brotli.solidlil
+  const solidGzip = runtime ? runtime.solid.gzip : gzip.solid
+  const lilGzip = runtime ? runtime.solidlil.gzip : gzip.solidlil
+  const solidRaw = runtime ? runtime.solid.raw : raw.solid
+  const lilRaw = runtime ? runtime.solidlil.raw : raw.solidlil
   document.querySelector("#total-bar").innerHTML = `
-    <div class="bar-solid"><span>Solid 2.0 Brotli</span><strong>${formatter.format(brotli.solid)} B</strong></div>
-    <div class="bar-lil" style="width:${width}%"><span>solidlil Brotli</span><strong>${formatter.format(brotli.solidlil)} B</strong></div>
-    <div class="bar-solid"><span>Solid 2.0 gzip-9</span><strong>${formatter.format(gzip.solid)} B</strong></div>
-    <div class="bar-lil" style="width:${Math.max(18, Math.min(100, (gzip.solidlil / gzip.solid) * 100))}%"><span>solidlil gzip-9</span><strong>${formatter.format(gzip.solidlil)} B</strong></div>
-    <div class="bar-solid"><span>Solid 2.0 raw</span><strong>${formatter.format(raw.solid)} B</strong></div>
-    <div class="bar-lil" style="width:${Math.max(18, Math.min(100, (raw.solidlil / raw.solid) * 100))}%"><span>solidlil raw</span><strong>${formatter.format(raw.solidlil)} B</strong></div>
+    <div class="bar-solid"><span>Solid 2.0 runtime Brotli</span><strong>${formatter.format(solidBrotli)} B</strong></div>
+    <div class="bar-lil" style="width:${Math.max(18, Math.min(100, (lilBrotli / solidBrotli) * 100))}%"><span>@itslil/solidjs/web Brotli</span><strong>${formatter.format(lilBrotli)} B</strong></div>
+    <div class="bar-solid"><span>Solid 2.0 runtime gzip-9</span><strong>${formatter.format(solidGzip)} B</strong></div>
+    <div class="bar-lil" style="width:${Math.max(18, Math.min(100, (lilGzip / solidGzip) * 100))}%"><span>@itslil/solidjs/web gzip-9</span><strong>${formatter.format(lilGzip)} B</strong></div>
+    <div class="bar-solid"><span>Solid 2.0 runtime raw</span><strong>${formatter.format(solidRaw)} B</strong></div>
+    <div class="bar-lil" style="width:${Math.max(18, Math.min(100, (lilRaw / solidRaw) * 100))}%"><span>@itslil/solidjs/web raw</span><strong>${formatter.format(lilRaw)} B</strong></div>
   `
 }
 

@@ -71,7 +71,7 @@
     "check:types": "tsc -p test/types/tsconfig.json",
     "check:pack": "node scripts/check-pack.mjs",
     "test": "node --test test/node.test.mjs test/vite.test.mjs",
-    "test:size": "node scripts/measure-size.mjs",
+    "test:size": "node scripts/measure-size.mjs && node scripts/measure-runtime.mjs",
     "prepublishOnly": "npm run check"
   },
   "devDependencies": {

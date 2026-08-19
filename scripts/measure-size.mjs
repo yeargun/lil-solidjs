@@ -75,11 +75,11 @@ const report = {
   },
   imports: {
     createSignal: {
-      solidlil: await bundledImports("solidlil", ["createSignal", "flush"]),
+      solidlil: await bundledImports("@itslil/solidjs", ["createSignal", "flush"]),
       solid: await bundledImports("solid-js", ["createSignal", "flush"]),
     },
     "createSignal+createMemo": {
-      solidlil: await bundledImports("solidlil", ["createSignal", "createMemo", "flush"]),
+      solidlil: await bundledImports("@itslil/solidjs", ["createSignal", "createMemo", "flush"]),
       solid: await bundledImports("solid-js", ["createSignal", "createMemo", "flush"]),
     },
   },

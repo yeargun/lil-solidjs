@@ -7,6 +7,7 @@ import { brotliCompressSync, constants, gzipSync } from "node:zlib"
 import { minify } from "terser"
 import { build as viteBuild } from "vite"
 import { apps } from "./apps.mjs"
+import { measureRuntime } from "./measure-runtime.mjs"
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..")
 const compilerCandidates = [
@@ -252,13 +253,14 @@ const summary = {
   generatedAt: new Date().toISOString(),
   compression: { gzip: 9, brotli: 11 },
   solid: "solid-js@2.0.0-rc.0 + @solidjs/web@2.0.0-rc.0",
-  solidlil: "closed-world LilScript production versus Solid 2.0 with package sideEffects:false",
+  solidlil: "whole-client vendor chunk versus Solid 2.0, plus closed-world LSX demos",
   cases: results.length,
   metrics: {
     raw: metricTotals("raw"),
     gzip: metricTotals("gzip"),
     brotli: metricTotals("brotli"),
   },
+  runtime: await measureRuntime(),
   keyedPerformance: keyedPerf,
   artifacts,
   examples: results,

@@ -49,10 +49,11 @@ test("every API used by the live recreations exists in solidlil", () => {
 
 test("the README leads with size and performance evidence", async () => {
   const readme = await read("README.md")
-  const evidence = readme.indexOf("paired browser demos")
+  const runtime = readme.indexOf("Client runtime")
   const jfb = readme.indexOf("js-framework-benchmark")
+  const evidence = readme.indexOf("paired browser demos")
   const install = readme.indexOf("npm install @itslil/solidjs")
-  assert.ok(jfb > 0 && jfb < evidence && evidence < install)
+  assert.ok(runtime > 0 && runtime < jfb && jfb < evidence && evidence < install)
   assert.match(readme, /raw \/ gzip-9 \/ Brotli-11/)
   assert.match(readme, /https:\/\/yeargun\.github\.io\/solidlil\//)
 })
@@ -72,6 +73,9 @@ test("the generated Pages artifact includes demos, sizes, and performance", asyn
   assert.match(html, /Lil brotli/)
   assert.match(html, /LSX/)
   assert.match(html, /@itslil\/solidjs/)
+  assert.match(html, /client runtime/)
+  assert.ok(results.runtime)
+  assert.ok(results.runtime.solid.brotli > results.runtime.solidlil.brotli)
   for (const app of apps) {
     assert.ok((await stat(join(root, "_site", "apps", app.id, "solid.html"))).size > 0)
     assert.ok((await stat(join(root, "_site", "apps", app.id, "solidlil.html"))).size > 0)
