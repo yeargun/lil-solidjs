@@ -1,4 +1,4 @@
-const data = await fetch("./results.json").then((response) => {
+const data = await fetch("./results.json?v=runtime").then((response) => {
   if (!response.ok) throw new Error(`Unable to load results: ${response.status}`)
   return response.json()
 })
