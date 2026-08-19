@@ -557,6 +557,10 @@ export T signalPeek<T>(Signal<T> signal) {
   return signal.peek();
 }
 
+export void signalCommit<T>(Signal<T> signal, T value) {
+  signal.commitNow(value);
+}
+
 export bool signalPending<T>(Signal<T> signal) {
   if (activeListenerId >= 0) {
     signal.subscribe(activeListenerId);
@@ -835,6 +839,55 @@ export T latest<T>(Signal<T> signal) {
 
 export void enablePendingThrows(bool enabled) {
   throwOnPending = enabled;
+}
+
+export Signal<T> createAsyncMemo<T>(T seed, func()->Task<T> compute, func(T, T)->bool equals) {
+  Signal<T> signal = createSignal(seed, equals);
+  int epoch = 0;
+  createRenderEffect(() => {
+    epoch += 1;
+    int token = epoch;
+    if (!signal.asyncPending) {
+      signal.asyncPending = true;
+      notifyObservers(signal.observerIds);
+    }
+    Task<T> task = compute();
+    task.then((T value) => {
+      if (token != epoch) {
+        return;
+      }
+      signal.asyncPending = false;
+      signal.commitNow(value);
+    });
+  });
+  return signal;
+}
+
+int nextUniqueId = 0;
+
+export string createUniqueId() {
+  nextUniqueId += 1;
+  return `cl-${nextUniqueId}`;
+}
+
+export int getOwner() {
+  return activeOwnerId;
+}
+
+export T runWithOwner<T>(int ownerId, func()->T callback) {
+  int previousOwner = activeOwnerId;
+  int previousEffect = activeEffectId;
+  int previousListener = activeListenerId;
+  activeOwnerId = ownerId;
+  activeEffectId = -1;
+  activeListenerId = -1;
+  try {
+    return callback();
+  } finally {
+    activeOwnerId = previousOwner;
+    activeEffectId = previousEffect;
+    activeListenerId = previousListener;
+  }
 }
 
 export int diagnosticOwnerSlots() {

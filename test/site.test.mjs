@@ -43,7 +43,10 @@ test("performance metrics are published next to the size tables", () => {
 })
 
 test("every API used by the live recreations exists in solidlil", () => {
-  for (const name of ["createSignal", "createMemo", "createEffect", "flush", "createRoot", "createStore"]) {
+  for (const name of [
+    "createSignal", "createMemo", "createEffect", "flush", "createRoot", "createStore",
+    "action", "createOptimistic", "createOptimisticStore", "isPending", "latest", "lazy", "children",
+  ]) {
     assert.equal(typeof runtime[name], "function", `${name} is not callable`)
   }
 })
@@ -55,6 +58,8 @@ test("the README leads with size and performance evidence", async () => {
   const install = readme.indexOf("npm install @itslil/solidjs")
   assert.ok(jfb > 0 && jfb < evidence && evidence < install)
   assert.match(readme, /## Why smaller/)
+  assert.match(readme, /Same flush, same pending/)
+  assert.doesNotMatch(readme, /We did not port Solid/)
   assert.match(readme, /raw \/ gzip-9 \/ Brotli-11/)
   assert.match(readme, /https:\/\/yeargun\.github\.io\/solidlil\//)
 })
@@ -82,6 +87,10 @@ test("the generated Pages artifact includes demos, sizes, and performance", asyn
   assert.match(html, /js-framework-benchmark/)
   assert.match(html, /id="why"/)
   assert.match(html, /Why smaller/)
+  assert.match(html, /Same flush, same pending/)
+  assert.doesNotMatch(html, /We never compiled SSR/)
+  assert.doesNotMatch(html, /unused @solidjs\/signals/)
+  assert.doesNotMatch(html, /ours <code>host\.lil<\/code>/)
   assert.ok(results.jsFrameworkBenchmark)
   assert.ok(results.jsFrameworkBenchmark.sizes.solid.brotli > results.jsFrameworkBenchmark.sizes.solidlil.brotli)
   assert.ok(

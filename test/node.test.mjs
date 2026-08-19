@@ -109,6 +109,48 @@ test("public entries export createSelector", () => {
   assert.equal(typeof solidlil.selectorMatch, "function")
 })
 
+test("createMemo settles a thenable and flips isPending", async () => {
+  const dispose = solidlil.createRoot((d) => d)
+  let finish
+  const pending = new Promise((done) => {
+    finish = done
+  })
+  const [id] = solidlil.createSignal(1)
+  const profile = solidlil.createMemo(() => pending.then(() => `user-${id()}`))
+  assert.equal(solidlil.isPending(profile), true)
+  finish()
+  await pending
+  await Promise.resolve()
+  await Promise.resolve()
+  assert.equal(solidlil.isPending(profile), false)
+  assert.equal(profile(), "user-1")
+  dispose()
+})
+
+test("action reverts createOptimistic writes on failure", async () => {
+  await solidlil.createRoot(async (dispose) => {
+    const [name, setName] = solidlil.createOptimistic("Ada")
+    const rename = solidlil.action(function* (next) {
+      setName(next)
+      solidlil.flush()
+      throw new Error("nope")
+    })
+    await assert.rejects(() => rename("Grace"))
+    assert.equal(name(), "Ada")
+    dispose()
+  })
+})
+
+test("createUniqueId is stable per call and children flattens", () => {
+  solidlil.createRoot(() => {
+    const first = solidlil.createUniqueId()
+    const second = solidlil.createUniqueId()
+    assert.notEqual(first, second)
+    const list = solidlil.children(() => ["a", ["b", null, "c"]])
+    assert.deepEqual(list.toArray(), ["a", "b", "c"])
+  })
+})
+
 test("CommonJS entry exposes the same public names", () => {
   const require = createRequire(import.meta.url)
   const cjs = require("@itslil/solidjs")

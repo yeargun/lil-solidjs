@@ -1,4 +1,16 @@
-import { createEffect, createMemo, createSignal, createStore, flush } from "@itslil/solidjs"
+import {
+  action,
+  children,
+  createEffect,
+  createMemo,
+  createOptimistic,
+  createSignal,
+  createStore,
+  createUniqueId,
+  flush,
+  isPending,
+  lazy,
+} from "@itslil/solidjs"
 import { render } from "@itslil/solidjs/web"
 import { keyedEach } from "@itslil/solidjs/full"
 
@@ -22,6 +34,18 @@ setStore((draft) => {
   draft.qty += 1
 })
 store()
+
+const [name, setName] = createOptimistic("Ada")
+const rename = action(function* (next: string) {
+  setName(next)
+  yield
+  return next
+})
+void rename("Grace")
+void isPending(doubled)
+void children(() => count())
+void createUniqueId()
+void lazy(async () => ({ default: () => null }))
 
 render("#app", (root) => {
   root.textContent = "ok"

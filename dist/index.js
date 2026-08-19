@@ -1,4 +1,5 @@
 export {
+  createAsyncMemo,
   createBoolMemo,
   createBoolSignal,
   createContext,
@@ -19,12 +20,11 @@ export {
   diagnosticPendingEffects,
   enablePendingThrows,
   flush,
-  isPending,
-  latest,
   onCleanup,
   onSettled,
   provideContext,
   selectorMatch,
+  signalCommit,
   signalGet,
   signalMarkPending,
   signalPeek,
@@ -38,4 +38,19 @@ export {
   storeSet,
   storeVersion,
 } from "./core.js"
-export { createSignal, createMemo, createEffect, createStore } from "./compat.js"
+export {
+  action,
+  children,
+  createEffect,
+  createMemo,
+  createOptimistic,
+  createOptimisticStore,
+  createSignal,
+  createStore,
+  createUniqueId,
+  getOwner,
+  isPending,
+  latest,
+  lazy,
+  runWithOwner,
+} from "./compat.js"

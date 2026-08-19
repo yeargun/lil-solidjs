@@ -6,8 +6,8 @@
     <meta name="description" content="solidlil: Solid 2.0 through LilScript. Official js-framework-benchmark keyed table 68% smaller Brotli, CPU at Solid 2.0." />
     <meta name="theme-color" content="#4fc1ff" />
     <title>solidlil — Solid 2.0, compressed through LilScript</title>
-    <link rel="stylesheet" href="./styles.css?v=why" />
-    <script type="module" src="./app.js?v=why"></script>
+    <link rel="stylesheet" href="./styles.css?v=full1" />
+    <script type="module" src="./app.js?v=full1"></script>
   </head>
   <body>
     <div class="progress" aria-hidden="true"></div>
@@ -88,7 +88,7 @@
             <p class="eyebrow">Why smaller</p>
             <h2>Not a harder<br />minifier.</h2>
           </div>
-          <p>The JFB gap is not Vite property-mangling Solid harder. Solid 2.0 already shortens internal keys at publish time. LilScript wins because it lowers a typed, closed client: owned fields become slots, host names stay exact, and the unused Solid 2.0 graph never exists.</p>
+          <p>The JFB gap is not Vite property-mangling Solid harder, and it is not a thinner API. Solid 2.0 already shortens internal keys at publish time. LilScript wins because it lowers the same typed client: owned fields become slots, host names stay exact.</p>
         </div>
 
         <div class="why-grid">
@@ -104,7 +104,7 @@
           </article>
           <article>
             <h3>Same templates, thinner For</h3>
-            <p>Both apps compile the jumbotron to <code>cloneNode</code> HTML templates. Solid JSX does that in <code>@solidjs/web</code>. LSX does it in the <code>lilx</code> lowerer, then <code>keyedEach</code> reconciles rows. The UI spelling matches; the list runtime does not carry Solid’s hydration/async owner graph.</p>
+            <p>Both apps compile the jumbotron to <code>cloneNode</code> HTML templates. Solid JSX does that in <code>@solidjs/web</code>. LSX does it in the <code>lilx</code> lowerer, then <code>keyedEach</code> reconciles rows. The UI spelling matches; <code>keyedEach</code> is the For reconcile, not a different list model.</p>
             <p class="why-links">
               <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-web/src/index.ts">Solid <code>web/index.ts</code></a>
               <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid/src/client/flow.ts">Solid <code>For</code></a>
@@ -114,13 +114,13 @@
             </p>
           </article>
           <article>
-            <h3>Client-only graph</h3>
-            <p>Solid 2.0’s published client still contains the signals scheduler, transitions, optimistic hooks, and a large hydration module. A Vite app tree-shakes some of it. We never compiled SSR, hydration, or the unused <code>@solidjs/signals</code> subsystems into this port.</p>
+            <h3>Same flush, same pending</h3>
+            <p>Solid’s <code>scheduler.ts</code> is the microtask flush plus effect queues. Ours is <code>pendingWrites</code>, render/user/settled queues, and <code>flush()</code> in <code>reactive.lil</code>. Solid’s <code>async.ts</code> is NotReady plus pending; ours is <code>asyncPending</code>, <code>isPending</code>, <code>latest</code>, <code>action</code>, <code>createOptimistic</code>, and <code>&lt;Loading&gt;</code>. Official JFB calls <code>render()</code> on both sides. That row is the same client app, not a cut-down port.</p>
             <p class="why-links">
-              <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid/src/client/hydration.ts">Solid <code>hydration.ts</code></a>
               <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/scheduler.ts">Solid <code>scheduler.ts</code></a>
               <a href="https://github.com/solidjs/solid/blob/v2.0.0-rc.0/packages/solid-signals/src/core/async.ts">Solid <code>async.ts</code></a>
-              <a href="https://github.com/yeargun/lil-solidjs/blob/main/src/host.lil">ours <code>host.lil</code></a>
+              <a href="https://github.com/yeargun/lil-solidjs/blob/main/src/reactive.lil">ours <code>reactive.lil</code></a>
+              <a href="https://github.com/yeargun/lil-solidjs/blob/main/src/web.lil">ours <code>web.lil</code></a>
             </p>
           </article>
           <article>
@@ -155,7 +155,7 @@
       </section>
 
       <section class="ticker" aria-label="Supported APIs">
-        <div>LSX <span>✦</span> createSignal <span>✦</span> flush <span>✦</span> createEffect(compute, apply) <span>✦</span> createMemo <span>✦</span> For <span>✦</span> Repeat <span>✦</span> Show <span>✦</span> Loading <span>✦</span> Errored <span>✦</span> createStore <span>✦</span> onSettled <span>✦</span> isPending</div>
+        <div>LSX <span>✦</span> createSignal <span>✦</span> flush <span>✦</span> createEffect(compute, apply) <span>✦</span> createMemo <span>✦</span> async memo <span>✦</span> For <span>✦</span> Repeat <span>✦</span> Show <span>✦</span> Loading <span>✦</span> Errored <span>✦</span> createStore <span>✦</span> action <span>✦</span> createOptimistic <span>✦</span> onSettled <span>✦</span> isPending <span>✦</span> latest <span>✦</span> lazy <span>✦</span> children</div>
       </section>
 
       <section class="lab shell" id="lab">

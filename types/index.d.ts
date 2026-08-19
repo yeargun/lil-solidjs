@@ -7,17 +7,29 @@ export interface SignalOptions<T> {
 }
 
 export function createSignal<T>(initial: T, options?: SignalOptions<T>): [Accessor<T>, Setter<T>]
-export function createMemo<T>(compute: () => T, options?: SignalOptions<T>): Accessor<T>
+export function createMemo<T>(compute: () => T | PromiseLike<T>, options?: SignalOptions<T>): Accessor<T>
 export function createEffect<T>(compute: () => T, apply: (value: T) => void): void
 export function createEffect(compute: () => void): void
 export function createStore<T extends object>(initial: T): [() => T, (updater: ((draft: T) => void) | T) => void]
+export function createOptimistic<T>(initial: T, options?: SignalOptions<T>): [Accessor<T>, Setter<T>]
+export function createOptimisticStore<T extends object>(initial: T): [() => T, (updater: ((draft: T) => void) | T) => void]
+export function action<Args extends unknown[], R>(
+  fn: (...args: Args) => Generator<unknown, R, unknown> | AsyncGenerator<unknown, R, unknown> | Promise<R> | R,
+): (...args: Args) => Promise<R>
+export function lazy<T extends (props: any) => unknown>(
+  loader: () => Promise<{ default: T }>,
+): T & { preload: () => Promise<void> }
+export function children<T>(fn: () => T): Accessor<T> & { toArray: () => unknown[] }
+export function createUniqueId(): string
+export function getOwner(): number
+export function runWithOwner<T>(owner: number, callback: () => T): T
 export function createRoot<T>(callback: (dispose: () => void) => T): T
 export function flush(): void
 export function untrack<T>(callback: () => T): T
 export function onCleanup(callback: () => void): void
 export function onSettled(callback: () => void): void
-export function isPending<T>(signal: { asyncPending?: boolean }): boolean
-export function latest<T>(signal: { read(): T }): T
+export function isPending(source: Accessor<unknown> | { asyncPending?: boolean } | { _signal?: unknown }): boolean
+export function latest<T>(source: Accessor<T> | { read(): T }): T
 export function createContext<T>(defaultValue: T): unknown
 export function useContext<T>(context: unknown): T
 export function provideContext<T, U>(context: unknown, value: T, child: () => U): U
